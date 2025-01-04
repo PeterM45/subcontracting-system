@@ -37,7 +37,7 @@ export function CustomerList() {
 
   if (!customers?.length) {
     return (
-      <Alert>
+      <Alert className="mt-6" variant="default">
         <AlertDescription>
           No customers found. Add your first customer to get started.
         </AlertDescription>

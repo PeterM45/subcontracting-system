@@ -3,6 +3,8 @@ import "~/styles/globals.css";
 import { GeistSans } from "geist/font/sans";
 import { type Metadata } from "next";
 import { Toaster } from "~/components/ui/toaster";
+import { SidebarProvider, SidebarTrigger } from "~/components/ui/sidebar";
+import { AppSidebar } from "~/components/app-sidebar";
 
 import { TRPCReactProvider } from "~/trpc/react";
 import {
@@ -10,7 +12,6 @@ import {
   SignInButton,
   SignedIn,
   SignedOut,
-  UserButton,
 } from "@clerk/nextjs";
 
 export const metadata: Metadata = {
@@ -23,19 +24,22 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <ClerkProvider>
-      <html lang="en" className={`${GeistSans.variable}`}>
-        <body>
+    <html lang="en" className={GeistSans.variable}>
+      <body>
+        <ClerkProvider>
           <SignedOut>
             <SignInButton />
           </SignedOut>
           <SignedIn>
-            <UserButton />
+            <SidebarProvider>
+              <AppSidebar />
+              <SidebarTrigger />
+              <TRPCReactProvider>{children}</TRPCReactProvider>
+            </SidebarProvider>
           </SignedIn>
-          <TRPCReactProvider>{children}</TRPCReactProvider>
           <Toaster />
-        </body>
-      </html>
-    </ClerkProvider>
+        </ClerkProvider>
+      </body>
+    </html>
   );
 }
