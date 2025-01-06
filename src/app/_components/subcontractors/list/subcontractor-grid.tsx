@@ -1,7 +1,7 @@
 "use client";
 
 import { api } from "~/trpc/react";
-import { SubcontractorCard } from "./card";
+import { SubcontractorCard } from "~/app/_components/subcontractors/list/subcontractor-card";
 
 export function SubcontractorGrid() {
   const { data: subcontractors } = api.subcontractor.getAll.useQuery();

@@ -32,9 +32,13 @@ export default function RootLayout({
           </SignedOut>
           <SignedIn>
             <SidebarProvider>
-              <AppSidebar />
-              <SidebarTrigger />
-              <TRPCReactProvider>{children}</TRPCReactProvider>
+              <TRPCReactProvider>
+                <AppSidebar />
+                <main className="w-full max-w-none">
+                  <SidebarTrigger />
+                  <div className="p-10">{children}</div>
+                </main>
+              </TRPCReactProvider>
             </SidebarProvider>
           </SignedIn>
           <Toaster />
