@@ -24,9 +24,9 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={GeistSans.variable}>
-      <body>
-        <ClerkProvider>
+    <ClerkProvider>
+      <html lang="en" className={GeistSans.variable}>
+        <body>
           <SignedOut>
             <SignInButton />
           </SignedOut>
@@ -42,8 +42,8 @@ export default function RootLayout({
             </SidebarProvider>
           </SignedIn>
           <Toaster />
-        </ClerkProvider>
-      </body>
-    </html>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }
