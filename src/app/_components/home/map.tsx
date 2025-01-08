@@ -5,9 +5,19 @@ import type { LatLngExpression, LatLngTuple } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css";
 import "leaflet-defaulticon-compatibility";
-import { Geocoder } from "@mapbox/search-js-react";
 import "@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css";
 import { useState } from "react";
+import dynamic from "next/dynamic";
+import type { ComponentType } from "react";
+import type { GeocoderProps } from "@mapbox/search-js-react/dist/components/Geocoder";
+
+const Geocoder = dynamic(
+  () =>
+    import("@mapbox/search-js-react").then((mod) => mod.Geocoder) as Promise<
+      ComponentType<GeocoderProps>
+    >,
+  { ssr: false },
+);
 
 type Subcontractor = NonNullable<RouterOutputs["subcontractor"]["getById"]>;
 

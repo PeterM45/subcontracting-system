@@ -6,8 +6,7 @@ import "@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css";
 
 export default function Page() {
   const [center] = useState<[number, number]>([43.6532, -79.3832]);
-  // const { data: subcontractors } = api.subcontractor.getAll.useQuery();
-  const subcontractors = [];
+  const { data: subcontractors } = api.subcontractor.getAll.useQuery();
 
   const Map = useMemo(
     () =>

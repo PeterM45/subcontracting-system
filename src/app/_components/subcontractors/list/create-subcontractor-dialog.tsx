@@ -3,7 +3,7 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { api } from "~/trpc/react";
-import { Geocoder } from "@mapbox/search-js-react";
+// import { Geocoder } from "@mapbox/search-js-react";
 import {
   Dialog,
   DialogContent,
@@ -24,6 +24,17 @@ import { Button } from "~/components/ui/button";
 import { Plus } from "lucide-react";
 import { useToast } from "~/hooks/use-toast";
 import { useState } from "react";
+import dynamic from "next/dynamic";
+import type { ComponentType } from "react";
+import type { GeocoderProps } from "@mapbox/search-js-react/dist/components/Geocoder";
+
+const Geocoder = dynamic(
+  () =>
+    import("@mapbox/search-js-react").then((mod) => mod.Geocoder) as Promise<
+      ComponentType<GeocoderProps>
+    >,
+  { ssr: false },
+);
 
 type GeocoderResult = {
   properties: {
