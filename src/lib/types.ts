@@ -11,7 +11,7 @@ export type SubcontractorFormData = {
   baseRate: number;
   dumpFee?: number;
   rentalRate?: number;
-  tonnageRate?: number;
+  additionalCost?: number;
   effectiveDate: string;
   expiryDate?: string;
   notes?: string;

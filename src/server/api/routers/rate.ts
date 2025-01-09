@@ -32,7 +32,7 @@ export const rateRouter = createTRPCRouter({
         baseRate: z.number(),
         dumpFee: z.number().optional(),
         rentalRate: z.number().optional(),
-        tonnageRate: z.number().optional(),
+        additionalCost: z.number().optional(),
         effectiveDate: z.date(),
         expiryDate: z.date().optional(),
         notes: z.string().optional(),
@@ -47,7 +47,7 @@ export const rateRouter = createTRPCRouter({
           baseRate: input.baseRate.toString(),
           dumpFee: input.dumpFee?.toString(),
           rentalRate: input.rentalRate?.toString(),
-          tonnageRate: input.tonnageRate?.toString(),
+          additionalCost: input.additionalCost?.toString(),
         })
         .returning();
 
@@ -70,7 +70,7 @@ export const rateRouter = createTRPCRouter({
         baseRate: z.number(),
         dumpFee: z.number().optional(),
         rentalRate: z.number().optional(),
-        tonnageRate: z.number().optional(),
+        additionalCost: z.number().optional(),
         effectiveDate: z.date(),
         expiryDate: z.date().optional(),
         notes: z.string().optional(),
@@ -84,7 +84,7 @@ export const rateRouter = createTRPCRouter({
           baseRate: input.baseRate.toString(),
           dumpFee: input.dumpFee?.toString(),
           rentalRate: input.rentalRate?.toString(),
-          tonnageRate: input.tonnageRate?.toString(),
+          additionalCost: input.additionalCost?.toString(),
         })
         .where(eq(rates.id, input.id))
         .returning();

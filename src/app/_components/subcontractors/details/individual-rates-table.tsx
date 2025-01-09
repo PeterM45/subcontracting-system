@@ -48,6 +48,7 @@ export function RatesTable({
               <TableHead className="text-right">Base Rate</TableHead>
               <TableHead className="text-right">Dump Fee</TableHead>
               <TableHead className="text-right">Rental Rate</TableHead>
+              <TableHead className="text-right">Additional Cost</TableHead>
               <TableHead className="text-right">Notes</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -64,6 +65,9 @@ export function RatesTable({
                 </TableCell>
                 <TableCell className="text-right">
                   {rate.rentalRate ? `$${rate.rentalRate}` : "-"}
+                </TableCell>
+                <TableCell className="text-right">
+                  {rate.additionalCost ? `$${rate.additionalCost}` : "-"}
                 </TableCell>
                 <TableCell className="text-right">{rate.notes}</TableCell>
 

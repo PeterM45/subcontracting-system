@@ -66,7 +66,7 @@ export const rates = pgTable("rate", {
   baseRate: decimal("base_rate", { precision: 10, scale: 2 }).notNull(),
   dumpFee: decimal("dump_fee", { precision: 10, scale: 2 }),
   rentalRate: decimal("rental_rate", { precision: 10, scale: 2 }),
-  tonnageRate: decimal("tonnage_rate", { precision: 10, scale: 2 }),
+  additionalCost: decimal("additional_cost", { precision: 10, scale: 2 }),
 
   effectiveDate: timestamp("effective_date").notNull(),
   expiryDate: timestamp("expiry_date"),

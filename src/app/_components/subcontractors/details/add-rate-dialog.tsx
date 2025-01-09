@@ -39,7 +39,7 @@ export function AddRateDialog({
       baseRate: undefined,
       dumpFee: undefined,
       rentalRate: undefined,
-      tonnageRate: undefined,
+      additionalCost: undefined,
       effectiveDate: "",
       expiryDate: "",
       notes: "",
@@ -67,7 +67,9 @@ export function AddRateDialog({
       baseRate: Number(data.baseRate),
       dumpFee: data.dumpFee ? Number(data.dumpFee) : undefined,
       rentalRate: data.rentalRate ? Number(data.rentalRate) : undefined,
-      tonnageRate: data.tonnageRate ? Number(data.tonnageRate) : undefined,
+      additionalCost: data.additionalCost
+        ? Number(data.additionalCost)
+        : undefined,
     });
   };
 
@@ -238,7 +240,7 @@ export function AddRateDialog({
 
             <FormField
               control={form.control}
-              name="tonnageRate"
+              name="additionalCost"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Tonnage Rate (Optional)</FormLabel>

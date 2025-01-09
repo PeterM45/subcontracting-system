@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -26,28 +26,42 @@ import {
 import { Pencil } from "lucide-react";
 import { api } from "~/trpc/react";
 import { useForm } from "react-hook-form";
+import type { DefaultValues } from "react-hook-form";
 import type { Rate, SubcontractorFormData } from "~/lib/types";
 import { formatMaterialType, formatServiceType } from "~/lib/formatting";
 
 export function EditRateDialog({ rate }: { rate: Rate }) {
   const [open, setOpen] = useState(false);
   const utils = api.useUtils();
-  const form = useForm<SubcontractorFormData>({
-    defaultValues: {
-      binSize: rate.binSize,
-      serviceType: rate.serviceType,
-      materialType: rate.materialType,
-      baseRate: Number(rate.baseRate),
-      dumpFee: rate.dumpFee ? Number(rate.dumpFee) : undefined,
-      rentalRate: rate.rentalRate ? Number(rate.rentalRate) : undefined,
-      tonnageRate: rate.tonnageRate ? Number(rate.tonnageRate) : undefined,
-      effectiveDate: rate.effectiveDate.toISOString().split("T")[0],
-      expiryDate: rate.expiryDate
-        ? rate.expiryDate.toISOString().split("T")[0]
-        : undefined,
-      notes: rate.notes ?? undefined,
-    },
+
+  // Create defaultValues helper function
+  const getDefaultValues = () => ({
+    binSize: rate.binSize,
+    serviceType: rate.serviceType,
+    materialType: rate.materialType,
+    baseRate: Number(rate.baseRate),
+    dumpFee: rate.dumpFee ? Number(rate.dumpFee) : undefined,
+    rentalRate: rate.rentalRate ? Number(rate.rentalRate) : undefined,
+    additionalCost: rate.additionalCost
+      ? Number(rate.additionalCost)
+      : undefined,
+    effectiveDate: rate.effectiveDate.toISOString().split("T")[0],
+    expiryDate: rate.expiryDate
+      ? rate.expiryDate.toISOString().split("T")[0]
+      : undefined,
+    notes: rate.notes ?? undefined,
   });
+
+  const form = useForm<SubcontractorFormData>({
+    defaultValues: getDefaultValues() as DefaultValues<SubcontractorFormData>,
+  });
+
+  // Reset form when dialog opens
+  useEffect(() => {
+    if (open) {
+      form.reset(getDefaultValues());
+    }
+  }, [open, rate]);
 
   const editRate = api.rate.update.useMutation({
     onSuccess: async () => {
@@ -55,7 +69,6 @@ export function EditRateDialog({ rate }: { rate: Rate }) {
         subcontractorId: rate.subcontractorId,
       });
       setOpen(false);
-      form.reset();
     },
   });
 
@@ -68,7 +81,9 @@ export function EditRateDialog({ rate }: { rate: Rate }) {
       baseRate: Number(data.baseRate),
       dumpFee: data.dumpFee ? Number(data.dumpFee) : undefined,
       rentalRate: data.rentalRate ? Number(data.rentalRate) : undefined,
-      tonnageRate: data.tonnageRate ? Number(data.tonnageRate) : undefined,
+      additionalCost: data.additionalCost
+        ? Number(data.additionalCost)
+        : undefined,
     });
   };
 
@@ -253,10 +268,10 @@ export function EditRateDialog({ rate }: { rate: Rate }) {
 
             <FormField
               control={form.control}
-              name="tonnageRate"
+              name="additionalCost"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tonnage Rate (Optional)</FormLabel>
+                  <FormLabel>Additional Rate (Optional)</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
