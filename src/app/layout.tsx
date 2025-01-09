@@ -28,7 +28,9 @@ export default function RootLayout({
       <html lang="en" className={GeistSans.variable}>
         <body>
           <SignedOut>
-            <SignInButton />
+            <div className="flex h-screen items-center justify-center text-3xl">
+              <SignInButton />
+            </div>
           </SignedOut>
           <SignedIn>
             <SidebarProvider>

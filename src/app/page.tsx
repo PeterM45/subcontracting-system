@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
 import { api } from "~/trpc/react";
 import "@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css";
+import { Skeleton } from "~/components/ui/skeleton";
 
 const TORONTO: [number, number] = [43.6532, -79.3832];
 
@@ -14,7 +15,7 @@ export default function Page() {
   const Map = useMemo(
     () =>
       dynamic(() => import("~/app/_components/home/map"), {
-        loading: () => <p>A map is loading</p>,
+        loading: () => <Skeleton className="h-full w-full" />,
         ssr: false,
       }),
     [],

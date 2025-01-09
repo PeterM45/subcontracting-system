@@ -15,7 +15,7 @@ function SubcontractorGridSkeleton() {
 
 export default function SubcontractorsPage() {
   return (
-    <main className="container mx-auto p-6">
+    <main className="container mx-auto p-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Subcontractors</h1>
         <CreateSubcontractorDialog />

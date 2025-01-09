@@ -2,6 +2,7 @@ import { Home, Settings, Users, Trash2 } from "lucide-react";
 import Link from "next/link";
 import {
   Sidebar,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -10,6 +11,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "~/components/ui/sidebar";
+import { UserButton } from "@clerk/nextjs";
 
 const items = [
   {
@@ -60,6 +62,9 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarHeader>
+      <SidebarFooter>
+        <UserButton />
+      </SidebarFooter>
     </Sidebar>
   );
 }
