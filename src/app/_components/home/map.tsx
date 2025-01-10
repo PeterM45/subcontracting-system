@@ -42,7 +42,7 @@ function MapContent({
 
   const handleResult = (res: GeocodingFeature) => {
     const [lng, lat] = res.geometry.coordinates;
-    map.setView([lat, lng], 5);
+    map.setView([lat, lng], 12);
     onLocationChange(lat, lng);
   };
   return (
