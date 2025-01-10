@@ -1,10 +1,22 @@
+import { z } from "zod";
 import type { RouterOutputs } from "~/trpc/react";
 
 export type Rate = RouterOutputs["rate"]["getBySubcontractor"][0];
 export type Subcontractor = NonNullable<
   RouterOutputs["subcontractor"]["getById"]
 >;
-export type SubcontractorFormData = {
+
+export const updateSubcontractorSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  contact: z.string().min(1, "Contact is required"),
+  phone: z.string().min(1, "Phone is required"),
+  email: z.string().email("Invalid email"),
+  location: z.string().min(1, "Location is required"),
+  latitude: z.string(),
+  longitude: z.string(),
+});
+
+export type RateFormData = {
   binSize: number;
   serviceType: "rolloff" | "frontend";
   materialType: "waste" | "recycling" | "concrete" | "dirt" | "mixed";
@@ -15,4 +27,16 @@ export type SubcontractorFormData = {
   effectiveDate: string;
   expiryDate?: string;
   notes?: string;
+};
+
+export type UpdateSubcontractorForm = z.infer<typeof updateSubcontractorSchema>;
+
+export type GeocoderResult = {
+  properties: {
+    full_address: string;
+    coordinates: {
+      latitude: number;
+      longitude: number;
+    };
+  };
 };

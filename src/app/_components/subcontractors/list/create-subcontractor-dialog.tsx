@@ -27,6 +27,7 @@ import { useState } from "react";
 import dynamic from "next/dynamic";
 import type { ComponentType } from "react";
 import type { GeocoderProps } from "@mapbox/search-js-react/dist/components/Geocoder";
+import type { GeocoderResult } from "~/lib/types";
 
 const Geocoder = dynamic(
   () =>
@@ -35,16 +36,6 @@ const Geocoder = dynamic(
     >,
   { ssr: false },
 );
-
-type GeocoderResult = {
-  properties: {
-    full_address: string;
-    coordinates: {
-      latitude: number;
-      longitude: number;
-    };
-  };
-};
 
 const formSchema = z.object({
   name: z.string().min(1, "Required"),

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "../trpc";
 import { eq } from "drizzle-orm";
-import { subcontractors } from "~/server/db/schema";
+import { subcontractors, rates } from "~/server/db/schema";
 
 export const subcontractorRouter = createTRPCRouter({
   getAll: publicProcedure.query(async ({ ctx }) => {
@@ -35,5 +35,38 @@ export const subcontractorRouter = createTRPCRouter({
         latitude: input.latitude.toString(),
         longitude: input.longitude.toString(),
       });
+    }),
+
+  update: publicProcedure
+    .input(
+      z.object({
+        id: z.number(),
+        name: z.string(),
+        contact: z.string().optional(),
+        phone: z.string().optional(),
+        email: z.string().email().optional(),
+        location: z.string(),
+        latitude: z.string(),
+        longitude: z.string(),
+        notes: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { id, ...data } = input;
+      return await ctx.db
+        .update(subcontractors)
+        .set(data)
+        .where(eq(subcontractors.id, id));
+    }),
+
+  delete: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      // First delete all associated rates
+      await ctx.db.delete(rates).where(eq(rates.subcontractorId, input.id));
+      // Then delete the subcontractor
+      return await ctx.db
+        .delete(subcontractors)
+        .where(eq(subcontractors.id, input.id));
     }),
 });

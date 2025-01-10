@@ -1,14 +1,15 @@
 "use client";
 import dynamic from "next/dynamic";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { BackButton } from "@/components/ui/back-button";
+import { Button } from "@/components/ui/button";
 import { SubcontractorInfo } from "~/app/_components/subcontractors/details/subcontractor-info";
 import { RatesTable } from "~/app/_components/subcontractors/details/individual-rates-table";
-import { type RouterOutputs } from "~/trpc/react";
 import { api } from "~/trpc/react";
-
-type Subcontractor = NonNullable<RouterOutputs["subcontractor"]["getById"]>;
-type Rate = RouterOutputs["rate"]["getBySubcontractor"][0];
+import { toast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
+import { Trash2 } from "lucide-react";
+import type { Subcontractor, Rate, UpdateSubcontractorForm } from "~/lib/types";
 
 export function PageContent({
   subcontractor,
@@ -17,11 +18,63 @@ export function PageContent({
   subcontractor: Subcontractor;
   initialRates: Rate[];
 }) {
-  // Use client-side query with initial data
+  const router = useRouter();
   const { data: rates } = api.rate.getBySubcontractor.useQuery(
     { subcontractorId: subcontractor.id },
     { initialData: initialRates },
   );
+
+  const [isEditing, setIsEditing] = useState(false);
+  const utils = api.useUtils();
+  const updateMutation = api.subcontractor.update.useMutation({
+    onSuccess: async () => {
+      // Invalidate both the individual query and the list query
+      await Promise.all([
+        utils.subcontractor.getById.invalidate({ id: subcontractor.id }),
+        utils.subcontractor.getAll.invalidate(),
+      ]);
+      setIsEditing(false);
+    },
+  });
+  const deleteMutation = api.subcontractor.delete.useMutation({
+    onSuccess: () => {
+      toast({
+        title: "Deleted",
+        description: "Subcontractor has been deleted",
+      });
+      void router.push("/subcontractors");
+    },
+    onError: (error) => {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message,
+      });
+    },
+  });
+
+  // Use the query to get real-time updates
+  const { data: updatedSubcontractor } = api.subcontractor.getById.useQuery(
+    { id: subcontractor.id },
+    {
+      initialData: subcontractor,
+    },
+  );
+
+  const onSubmit = async (data: UpdateSubcontractorForm) => {
+    try {
+      await updateMutation.mutateAsync({
+        id: subcontractor.id,
+        ...data,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update subcontractor",
+        variant: "destructive",
+      });
+    }
+  };
 
   const Map = useMemo(
     () =>
@@ -36,16 +89,46 @@ export function PageContent({
   );
 
   const position: [number, number] = [
-    Number(subcontractor.latitude),
-    Number(subcontractor.longitude),
+    Number(updatedSubcontractor?.latitude),
+    Number(updatedSubcontractor?.longitude),
   ];
 
   return (
     <div className="space-y-6">
-      <BackButton />
-      <SubcontractorInfo subcontractor={subcontractor} />
+      <div className="flex items-center justify-between border-b pb-5">
+        <BackButton />
+        <div className="flex gap-2">
+          <Button onClick={() => setIsEditing(!isEditing)}>
+            {isEditing ? "Cancel" : "Edit"}
+          </Button>
+          <Button
+            variant="destructive"
+            size="icon"
+            onClick={() => {
+              if (
+                confirm("Are you sure? This will delete all associated rates.")
+              ) {
+                deleteMutation.mutate({ id: subcontractor.id });
+              }
+            }}
+            disabled={deleteMutation.status === "pending"}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      <SubcontractorInfo
+        subcontractor={updatedSubcontractor ?? subcontractor}
+        isEditing={isEditing}
+        onSubmit={onSubmit}
+      />
       <div className="relative z-0 h-[400px] w-full">
-        <Map posix={position} subcontractor={subcontractor} zoom={15} />
+        <Map
+          posix={position}
+          subcontractor={updatedSubcontractor ?? subcontractor}
+          zoom={15}
+        />
       </div>
       <RatesTable rates={rates} subcontractor={subcontractor} />
     </div>

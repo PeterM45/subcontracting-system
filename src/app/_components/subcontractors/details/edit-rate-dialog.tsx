@@ -27,7 +27,7 @@ import { Pencil } from "lucide-react";
 import { api } from "~/trpc/react";
 import { useForm } from "react-hook-form";
 import type { DefaultValues } from "react-hook-form";
-import type { Rate, SubcontractorFormData } from "~/lib/types";
+import type { Rate, RateFormData } from "~/lib/types";
 import { formatMaterialType, formatServiceType } from "~/lib/formatting";
 
 export function EditRateDialog({ rate }: { rate: Rate }) {
@@ -52,8 +52,8 @@ export function EditRateDialog({ rate }: { rate: Rate }) {
     notes: rate.notes ?? undefined,
   });
 
-  const form = useForm<SubcontractorFormData>({
-    defaultValues: getDefaultValues() as DefaultValues<SubcontractorFormData>,
+  const form = useForm<RateFormData>({
+    defaultValues: getDefaultValues() as DefaultValues<RateFormData>,
   });
 
   // Reset form when dialog opens
@@ -72,7 +72,7 @@ export function EditRateDialog({ rate }: { rate: Rate }) {
     },
   });
 
-  const onSubmit = (data: SubcontractorFormData) => {
+  const onSubmit = (data: RateFormData) => {
     editRate.mutate({
       id: rate.id,
       ...data,

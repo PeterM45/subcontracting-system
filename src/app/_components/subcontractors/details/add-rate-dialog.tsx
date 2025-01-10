@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
 import { api } from "~/trpc/react";
-import type { Subcontractor, SubcontractorFormData } from "~/lib/types";
+import type { Subcontractor, RateFormData } from "~/lib/types";
 
 export function AddRateDialog({
   subcontractor,
@@ -33,7 +33,7 @@ export function AddRateDialog({
   subcontractor: Subcontractor;
 }) {
   const [open, setOpen] = useState(false);
-  const form = useForm<SubcontractorFormData>({
+  const form = useForm<RateFormData>({
     defaultValues: {
       binSize: undefined,
       baseRate: undefined,
@@ -58,7 +58,7 @@ export function AddRateDialog({
     },
   });
 
-  const onSubmit = (data: SubcontractorFormData) => {
+  const onSubmit = (data: RateFormData) => {
     addRate.mutate({
       ...data,
       subcontractorId: subcontractor.id,
@@ -243,7 +243,7 @@ export function AddRateDialog({
               name="additionalCost"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tonnage Rate (Optional)</FormLabel>
+                  <FormLabel>Additional Cost (Optional)</FormLabel>
                   <FormControl>
                     <Input
                       type="number"

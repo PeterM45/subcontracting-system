@@ -1,7 +1,9 @@
 "use client";
+import { useEffect, useRef } from "react";
 import { type RouterOutputs } from "~/trpc/react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import type { LatLngExpression, LatLngTuple } from "leaflet";
+import type { Map as LeafletMap } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css";
 import "leaflet-defaulticon-compatibility";
@@ -20,8 +22,17 @@ const defaults = {
 };
 
 const Map = ({ zoom = defaults.zoom, posix, subcontractor }: MapProps) => {
+  const mapRef = useRef<LeafletMap>(null);
+
+  useEffect(() => {
+    if (mapRef.current) {
+      mapRef.current.setView(posix, zoom);
+    }
+  }, [posix, zoom]);
+
   return (
     <MapContainer
+      ref={mapRef}
       center={posix}
       zoom={zoom}
       scrollWheelZoom={false}
