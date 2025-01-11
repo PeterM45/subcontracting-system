@@ -17,6 +17,9 @@ importers:
       '@mapbox/mapbox-gl-geocoder':
         specifier: ^5.0.3
         version: 5.0.3
+      '@mapbox/search-js-core':
+        specifier: 1.0.0-beta.24
+        version: 1.0.0-beta.24
       '@mapbox/search-js-react':
         specifier: 1.0.0-beta.24
         version: 1.0.0-beta.24(mapbox-gl@3.9.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -141,6 +144,9 @@ importers:
       '@types/eslint':
         specifier: ^8.56.12
         version: 8.56.12
+      '@types/geojson':
+        specifier: ^7946.0.15
+        version: 7946.0.15
       '@types/mapbox__mapbox-gl-geocoder':
         specifier: ^5.0.0
         version: 5.0.0

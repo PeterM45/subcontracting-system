@@ -1,5 +1,4 @@
 "use client";
-import { type RouterOutputs } from "~/trpc/react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import type { LatLngExpression, LatLngTuple } from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -10,6 +9,7 @@ import { useState } from "react";
 import dynamic from "next/dynamic";
 import type { ComponentType } from "react";
 import type { GeocoderProps } from "@mapbox/search-js-react/dist/components/Geocoder";
+import type { Subcontractor } from "~/lib/types";
 
 const Geocoder = dynamic(
   () =>
@@ -19,18 +19,10 @@ const Geocoder = dynamic(
   { ssr: false },
 );
 
-type Subcontractor = NonNullable<RouterOutputs["subcontractor"]["getById"]>;
-
 interface MapProps {
   posix: LatLngExpression | LatLngTuple;
   zoom?: number;
   subcontractors?: Subcontractor[];
-}
-
-interface GeocodingFeature {
-  geometry: {
-    coordinates: [number, number];
-  };
 }
 
 function MapContent({
@@ -40,11 +32,16 @@ function MapContent({
 }) {
   const map = useMap();
 
-  const handleResult = (res: GeocodingFeature) => {
-    const [lng, lat] = res.geometry.coordinates;
-    map.setView([lat, lng], 12);
-    onLocationChange(lat, lng);
+  const handleRetrieve: NonNullable<GeocoderProps["onRetrieve"]> = (res) => {
+    if (!res.geometry || res.geometry.type !== "Point") {
+      return;
+    }
+    const coordinates = res.geometry.coordinates;
+    const [lng, lat] = coordinates;
+    map.setView([Number(lat), Number(lng)], 12);
+    onLocationChange(Number(lat), Number(lng));
   };
+
   return (
     <div className="absolute right-2 top-2 z-[1000] w-64">
       <Geocoder
@@ -53,7 +50,7 @@ function MapContent({
           language: "en",
           country: "CA",
         }}
-        onRetrieve={handleResult}
+        onRetrieve={handleRetrieve}
       />
     </div>
   );
