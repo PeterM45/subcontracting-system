@@ -10,6 +10,7 @@ import dynamic from "next/dynamic";
 import type { ComponentType } from "react";
 import type { GeocoderProps } from "@mapbox/search-js-react/dist/components/Geocoder";
 import type { Subcontractor } from "~/lib/types";
+import Link from "next/link";
 
 const Geocoder = dynamic(
   () =>
@@ -84,10 +85,12 @@ const Map = (Map: MapProps) => {
         >
           <Popup>
             <div>
-              <h3 className="font-bold">{sub.name}</h3>
-              {sub.contact && <p>Contact: {sub.contact}</p>}
-              {sub.phone && <p>Phone: {sub.phone}</p>}
-              {sub.location && <p>{sub.location}</p>}
+              <Link href={`/subcontractors/${sub.id}`}>
+                <h3 className="font-bold">{sub.name}</h3>
+                {sub.contact && <p>Contact: {sub.contact}</p>}
+                {sub.phone && <p>Phone: {sub.phone}</p>}
+                {sub.location && <p>{sub.location}</p>}
+              </Link>
             </div>
           </Popup>
         </Marker>
