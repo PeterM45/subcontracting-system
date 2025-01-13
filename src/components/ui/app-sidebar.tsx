@@ -62,7 +62,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarHeader>
-      <SidebarFooter>
+      <SidebarFooter className="fixed bottom-2 left-2">
         <UserButton />
       </SidebarFooter>
     </Sidebar>

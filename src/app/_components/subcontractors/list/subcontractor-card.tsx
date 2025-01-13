@@ -11,7 +11,7 @@ export function SubcontractorCard({
   subcontractor: Subcontractor;
 }) {
   return (
-    <Link href={`/subcontractors/${subcontractor.id}`}>
+    <Link href={`/subcontractors/${subcontractor.id}/details`}>
       <Card className="cursor-pointer transition-shadow hover:shadow-md">
         <CardHeader>
           <CardTitle>{subcontractor.name}</CardTitle>

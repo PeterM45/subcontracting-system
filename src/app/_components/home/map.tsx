@@ -85,7 +85,7 @@ const Map = (Map: MapProps) => {
         >
           <Popup>
             <div>
-              <Link href={`/subcontractors/${sub.id}`}>
+              <Link href={`/subcontractors/${sub.id}`} scroll={false}>
                 <h3 className="font-bold">{sub.name}</h3>
                 {sub.contact && <p>Contact: {sub.contact}</p>}
                 {sub.phone && <p>Phone: {sub.phone}</p>}

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { api } from "~/trpc/server";
-import { PageContent } from "./page-content";
+import { PageContent } from "~/app/subcontractors/[id]/page-content";
 
 export async function generateMetadata({ params }: { params: { id: string } }) {
   const { id } = await Promise.resolve(params);

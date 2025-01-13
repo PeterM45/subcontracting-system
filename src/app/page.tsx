@@ -25,7 +25,7 @@ export default function Page() {
     <main className="container mx-auto p-4">
       <h1 className="mb-4 text-2xl font-bold">Home</h1>
 
-      <div className="h-[600px] w-full">
+      <div className="relative z-0 h-[600px] w-full">
         <Map posix={center} subcontractors={subcontractors} zoom={9} />
       </div>
     </main>

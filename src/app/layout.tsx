@@ -4,7 +4,7 @@ import { GeistSans } from "geist/font/sans";
 import { type Metadata } from "next";
 import { Toaster } from "~/components/ui/toaster";
 import { SidebarProvider, SidebarTrigger } from "~/components/ui/sidebar";
-import { AppSidebar } from "~/components/app-sidebar";
+import { AppSidebar } from "~/components/ui/app-sidebar";
 
 import { TRPCReactProvider } from "~/trpc/react";
 import {
@@ -13,6 +13,7 @@ import {
   SignedIn,
   SignedOut,
 } from "@clerk/nextjs";
+import React from "react";
 
 export const metadata: Metadata = {
   title: "Subcontracting System",
@@ -22,7 +23,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{ children: React.ReactNode }>) {
+  modal,
+}: Readonly<{ children: React.ReactNode; modal: React.ReactNode }>) {
   return (
     <ClerkProvider>
       <html lang="en" className={GeistSans.variable}>
@@ -38,7 +40,10 @@ export default function RootLayout({
                 <AppSidebar />
                 <main className="w-full max-w-none">
                   <SidebarTrigger />
-                  <div className="p-10">{children}</div>
+                  <div className="p-10">
+                    {children}
+                    {modal}
+                  </div>
                 </main>
               </TRPCReactProvider>
             </SidebarProvider>
