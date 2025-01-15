@@ -20,6 +20,11 @@ const items = [
     icon: Home,
   },
   {
+    title: "Service Requests",
+    url: "/service-requests",
+    icon: Trash2,
+  },
+  {
     title: "Customers",
     url: "/customers",
     icon: Users,

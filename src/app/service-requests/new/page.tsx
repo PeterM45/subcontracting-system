@@ -5,8 +5,8 @@ export default function NewServiceRequestPage() {
   return (
     <div className="container mx-auto p-6">
       <div className="mb-6">
+        <BackButton />
         <div className="flex items-center gap-2">
-          <BackButton />
           <h1 className="text-2xl font-bold">New Service Request</h1>
         </div>
         <p className="mt-2 text-muted-foreground">

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { eq, and, or, gt, lt, sql } from "drizzle-orm";
+import { eq, and, or, gt, lt, sql, inArray } from "drizzle-orm";
 import { createTRPCRouter, publicProcedure } from "../trpc";
 import { subcontractors, rates } from "~/server/db/schema";
 import { ServiceType, MaterialType } from "~/lib/types";
@@ -81,33 +81,33 @@ export const subcontractorRouter = createTRPCRouter({
         materialType: z.enum(MaterialType),
       }),
     )
-    .query(async ({ ctx, input }) => {
-      const nearbySubcontractors = await ctx.db
+    .query(async ({ ctx }) => {
+      // Get all subcontractors
+      const allSubcontractors = await ctx.db.select().from(subcontractors);
+
+      // Get all valid rates
+      const validRates = await ctx.db
         .select()
-        .from(subcontractors)
-        .leftJoin(
-          rates,
-          and(
-            eq(rates.subcontractorId, subcontractors.id),
-            eq(rates.binSize, input.binSize),
-            eq(rates.serviceType, input.serviceType),
-            eq(rates.materialType, input.materialType),
-            or(
-              eq(rates.expiryDate, sql`null`),
-              gt(rates.expiryDate, new Date()),
-            ),
-          ),
-        )
+        .from(rates)
         .where(
-          and(
-            gt(subcontractors.latitude, (input.latitude - 0.5).toString()),
-            lt(subcontractors.latitude, (input.latitude + 0.5).toString()),
-            gt(subcontractors.longitude, (input.longitude - 0.5).toString()),
-            lt(subcontractors.longitude, (input.longitude + 0.5).toString()),
-          ),
+          or(eq(rates.expiryDate, sql`null`), gt(rates.expiryDate, new Date())),
         )
         .orderBy(rates.effectiveDate);
 
-      return nearbySubcontractors;
+      // Transform the data
+      const result = allSubcontractors.map((subcontractor) => ({
+        subcontractor: subcontractor,
+        rates: validRates
+          .filter((rate) => rate.subcontractorId === subcontractor.id)
+          .sort((a, b) => {
+            // Sort by effective date only
+            return (
+              new Date(b.effectiveDate).getTime() -
+              new Date(a.effectiveDate).getTime()
+            );
+          }),
+      }));
+
+      return result; // Return all subcontractors, even those without rates
     }),
 });
