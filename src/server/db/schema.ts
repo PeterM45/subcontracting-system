@@ -1,6 +1,5 @@
 import { sql } from "drizzle-orm";
 import {
-  index,
   integer,
   pgTable,
   timestamp,
@@ -8,26 +7,7 @@ import {
   text,
   decimal,
 } from "drizzle-orm/pg-core";
-
-export const customers = pgTable(
-  "customer",
-  {
-    id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
-    name: varchar("name", { length: 256 }).notNull(),
-    email: varchar("email", { length: 256 }),
-    phone: varchar("phone", { length: 20 }),
-    notes: text("notes"),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
-      () => new Date(),
-    ),
-  },
-  (table) => ({
-    emailIndex: index("email_idx").on(table.email),
-  }),
-);
+import { ServiceType, MaterialType } from "@/lib/types";
 
 export const subcontractors = pgTable("subcontractor", {
   id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
@@ -56,10 +36,10 @@ export const rates = pgTable("rate", {
   // Service Type Details
   binSize: integer("bin_size").notNull(),
   serviceType: varchar("service_type", {
-    enum: ["rolloff", "frontend"],
+    enum: ServiceType,
   }).notNull(),
   materialType: varchar("material_type", {
-    enum: ["waste", "recycling", "concrete", "dirt", "mixed"],
+    enum: MaterialType,
   }).notNull(),
 
   // Core Rates
@@ -71,4 +51,38 @@ export const rates = pgTable("rate", {
   effectiveDate: timestamp("effective_date").notNull(),
   expiryDate: timestamp("expiry_date"),
   notes: text("notes"),
+});
+
+export const customers = pgTable("customer", {
+  id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
+  name: varchar("name", { length: 256 }).notNull(),
+  email: varchar("email", { length: 256 }),
+  phone: varchar("phone", { length: 20 }),
+  notes: text("notes"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+});
+
+export const serviceRequests = pgTable("service_request", {
+  id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
+  customerId: integer("customer_id").references(() => customers.id),
+
+  // Location (from Mapbox)
+  address: text("address").notNull(),
+  latitude: decimal("latitude", { precision: 10, scale: 6 }),
+  longitude: decimal("longitude", { precision: 10, scale: 6 }),
+
+  // Service Info
+  binSize: integer("bin_size").notNull(),
+  serviceType: varchar("service_type", {
+    enum: ServiceType,
+  }).notNull(),
+  materialType: varchar("material_type", {
+    enum: MaterialType,
+  }).notNull(),
+
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
 });

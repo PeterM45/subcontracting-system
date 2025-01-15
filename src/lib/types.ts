@@ -40,3 +40,15 @@ export type GeocoderResult = {
     };
   };
 };
+
+export const ServiceType = ["rolloff", "frontend"] as const;
+export const MaterialType = [
+  "waste",
+  "recycling",
+  "concrete",
+  "dirt",
+  "mixed",
+] as const;
+
+export type ServiceType = (typeof ServiceType)[number];
+export type MaterialType = (typeof MaterialType)[number];

@@ -19,13 +19,15 @@ export const customerRouter = createTRPCRouter({
   create: publicProcedure
     .input(
       z.object({
-        name: z.string(),
-        email: z.string().email().optional(),
-        phone: z.string().optional(),
-        notes: z.string().optional(),
+        name: z.string().min(1, "Name is required"),
+        email: z.string().optional().nullable(),
+        phone: z.string().optional().nullable(),
+        notes: z.string().optional().nullable(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      return await ctx.db.insert(customers).values(input);
+      return await ctx.db.insert(customers).values({
+        ...input,
+      });
     }),
 });

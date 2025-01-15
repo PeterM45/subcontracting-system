@@ -1,7 +1,8 @@
 import { z } from "zod";
+import { eq, and, or, gt, lt, sql } from "drizzle-orm";
 import { createTRPCRouter, publicProcedure } from "../trpc";
-import { eq } from "drizzle-orm";
 import { subcontractors, rates } from "~/server/db/schema";
+import { ServiceType, MaterialType } from "~/lib/types";
 
 export const subcontractorRouter = createTRPCRouter({
   getAll: publicProcedure.query(async ({ ctx }) => {
@@ -68,5 +69,45 @@ export const subcontractorRouter = createTRPCRouter({
       return await ctx.db
         .delete(subcontractors)
         .where(eq(subcontractors.id, input.id));
+    }),
+
+  getNearbyWithRates: publicProcedure
+    .input(
+      z.object({
+        latitude: z.number(),
+        longitude: z.number(),
+        binSize: z.number(),
+        serviceType: z.enum(ServiceType),
+        materialType: z.enum(MaterialType),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const nearbySubcontractors = await ctx.db
+        .select()
+        .from(subcontractors)
+        .leftJoin(
+          rates,
+          and(
+            eq(rates.subcontractorId, subcontractors.id),
+            eq(rates.binSize, input.binSize),
+            eq(rates.serviceType, input.serviceType),
+            eq(rates.materialType, input.materialType),
+            or(
+              eq(rates.expiryDate, sql`null`),
+              gt(rates.expiryDate, new Date()),
+            ),
+          ),
+        )
+        .where(
+          and(
+            gt(subcontractors.latitude, (input.latitude - 0.5).toString()),
+            lt(subcontractors.latitude, (input.latitude + 0.5).toString()),
+            gt(subcontractors.longitude, (input.longitude - 0.5).toString()),
+            lt(subcontractors.longitude, (input.longitude + 0.5).toString()),
+          ),
+        )
+        .orderBy(rates.effectiveDate);
+
+      return nearbySubcontractors;
     }),
 });

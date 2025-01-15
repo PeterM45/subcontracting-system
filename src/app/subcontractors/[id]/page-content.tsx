@@ -67,7 +67,7 @@ export function PageContent({
         id: subcontractor.id,
         ...data,
       });
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to update subcontractor",
