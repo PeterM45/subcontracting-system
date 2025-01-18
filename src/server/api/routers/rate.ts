@@ -2,6 +2,34 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "../trpc";
 import { eq } from "drizzle-orm";
 import { rates } from "~/server/db/schema";
+import { validateRateStructure } from "@/lib/rate-utils";
+import { TRPCError } from "@trpc/server";
+
+// Define Zod schemas for the rate structure
+const additionalCostSchema = z.object({
+  name: z.string(),
+  amount: z.number(),
+  isPercentage: z.boolean(),
+  description: z.string().optional(),
+});
+
+const rateStructureSchema = z
+  .object({
+    flatRate: z.number().optional(),
+    baseRate: z.number().optional(),
+    dumpFee: z.number().optional(),
+    rentalRate: z.number().optional(),
+    additionalCosts: z.array(additionalCostSchema),
+  })
+  .refine(
+    (data) => {
+      // Ensure either flatRate or baseRate is present, but not both
+      return (data.flatRate === undefined) !== (data.baseRate === undefined);
+    },
+    {
+      message: "Must provide either flatRate or baseRate, but not both",
+    },
+  );
 
 export const rateRouter = createTRPCRouter({
   getAll: publicProcedure.query(async ({ ctx }) => {
@@ -29,25 +57,32 @@ export const rateRouter = createTRPCRouter({
           "dirt",
           "mixed",
         ]),
-        baseRate: z.number(),
-        dumpFee: z.number().optional(),
-        rentalRate: z.number().optional(),
-        additionalCost: z.number().optional(),
+        rateStructure: rateStructureSchema,
         effectiveDate: z.date(),
         expiryDate: z.date().optional(),
         notes: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      // Make sure we're returning the inserted row
+      // Additional validation using our utility function
+      if (!validateRateStructure(input.rateStructure)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Invalid rate structure",
+        });
+      }
+
       const [newRate] = await ctx.db
         .insert(rates)
         .values({
-          ...input,
-          baseRate: input.baseRate.toString(),
-          dumpFee: input.dumpFee?.toString(),
-          rentalRate: input.rentalRate?.toString(),
-          additionalCost: input.additionalCost?.toString(),
+          subcontractorId: input.subcontractorId,
+          binSize: input.binSize,
+          serviceType: input.serviceType,
+          materialType: input.materialType,
+          rateStructure: input.rateStructure,
+          effectiveDate: input.effectiveDate,
+          expiryDate: input.expiryDate,
+          notes: input.notes,
         })
         .returning();
 
@@ -67,27 +102,35 @@ export const rateRouter = createTRPCRouter({
           "dirt",
           "mixed",
         ]),
-        baseRate: z.number(),
-        dumpFee: z.number().optional(),
-        rentalRate: z.number().optional(),
-        additionalCost: z.number().optional(),
+        rateStructure: rateStructureSchema,
         effectiveDate: z.date(),
         expiryDate: z.date().optional(),
         notes: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Additional validation using our utility function
+      if (!validateRateStructure(input.rateStructure)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Invalid rate structure",
+        });
+      }
+
       const [updatedRate] = await ctx.db
         .update(rates)
         .set({
-          ...input,
-          baseRate: input.baseRate.toString(),
-          dumpFee: input.dumpFee?.toString(),
-          rentalRate: input.rentalRate?.toString(),
-          additionalCost: input.additionalCost?.toString(),
+          binSize: input.binSize,
+          serviceType: input.serviceType,
+          materialType: input.materialType,
+          rateStructure: input.rateStructure,
+          effectiveDate: input.effectiveDate,
+          expiryDate: input.expiryDate,
+          notes: input.notes,
         })
         .where(eq(rates.id, input.id))
         .returning();
+
       return updatedRate;
     }),
 

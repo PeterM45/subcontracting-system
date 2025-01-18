@@ -1,8 +1,38 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "../trpc";
-import { ServiceType, MaterialType } from "@/lib/types";
+import {
+  ServiceType,
+  MaterialType,
+  type AdditionalCostType,
+  type RateStructure,
+} from "@/lib/types";
 import { serviceRequests, customers } from "~/server/db/schema";
 import { eq } from "drizzle-orm";
+
+// Define schemas for the rate structure
+const additionalCostSchema: z.ZodType<AdditionalCostType> = z.object({
+  name: z.string(),
+  amount: z.number(),
+  isPercentage: z.boolean(),
+  description: z.string().optional(),
+});
+
+const rateStructureSchema: z.ZodType<RateStructure> = z
+  .object({
+    flatRate: z.number().optional(),
+    baseRate: z.number().optional(),
+    dumpFee: z.number().optional(),
+    rentalRate: z.number().optional(),
+    additionalCosts: z.array(additionalCostSchema),
+  })
+  .refine(
+    (data) => {
+      return (data.flatRate !== undefined) !== (data.baseRate !== undefined);
+    },
+    {
+      message: "Must provide either flatRate or baseRate, but not both",
+    },
+  );
 
 export const serviceRequestRouter = createTRPCRouter({
   create: publicProcedure
@@ -25,10 +55,7 @@ export const serviceRequestRouter = createTRPCRouter({
           rateId: z.number(),
           scheduledStart: z.string(), // ISO string
           scheduledRemoval: z.string().optional(), // ISO string
-          appliedBaseRate: z.number(),
-          appliedDumpFee: z.number().nullable(),
-          appliedRentalRate: z.number().nullable(),
-          appliedAdditionalCost: z.number().nullable(),
+          appliedRateStructure: rateStructureSchema,
           specialInstructions: z.string().optional(),
         }),
       }),
@@ -60,7 +87,7 @@ export const serviceRequestRouter = createTRPCRouter({
         customerId = newCustomer?.id ?? 0;
       }
 
-      // Create the service request
+      // Create the service request with the new rate structure
       const [serviceRequest] = await ctx.db
         .insert(serviceRequests)
         .values({
@@ -77,10 +104,7 @@ export const serviceRequestRouter = createTRPCRouter({
           scheduledRemoval: input.serviceData.scheduledRemoval
             ? new Date(input.serviceData.scheduledRemoval)
             : null,
-          appliedBaseRate: input.serviceData.appliedBaseRate,
-          appliedDumpFee: input.serviceData.appliedDumpFee,
-          appliedRentalRate: input.serviceData.appliedRentalRate,
-          appliedAdditionalCost: input.serviceData.appliedAdditionalCost,
+          appliedRateStructure: input.serviceData.appliedRateStructure,
           specialInstructions: input.serviceData.specialInstructions,
         })
         .returning({ serviceRequestId: serviceRequests.id });

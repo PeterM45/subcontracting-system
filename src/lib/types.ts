@@ -52,3 +52,23 @@ export const MaterialType = [
 
 export type ServiceType = (typeof ServiceType)[number];
 export type MaterialType = (typeof MaterialType)[number];
+
+export type AdditionalCostType = {
+  name: string;
+  amount: number;
+  isPercentage: boolean;
+  description?: string;
+};
+
+// Types for the rate structure
+export type RateStructure = {
+  // If flatRate is present, baseRate and dumpFee should not be
+  flatRate?: number;
+  // If baseRate is present, flatRate should not be
+  baseRate?: number;
+  dumpFee?: number;
+  // Optional rental rate
+  rentalRate?: number;
+  // Array of additional costs
+  additionalCosts: AdditionalCostType[];
+};

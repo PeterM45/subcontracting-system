@@ -16,44 +16,64 @@ import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { GeocoderResult } from "~/lib/types";
 
-const formSchema = z.object({
-  // Customer Info
-  name: z.string().min(1, "Required"),
-  email: z.union([z.string().email(), z.string().length(0)]).optional(),
-  phone: z.string().optional(),
-  notes: z.string().optional(),
-
-  // Service Info
-  address: z.string().min(1, "Please enter a valid address"),
-  latitude: z.number(),
-  longitude: z.number(),
-  binSize: z.number().min(1, "Required"),
-  serviceType: z.enum(ServiceType),
-  materialType: z.enum(MaterialType),
-  subcontractorId: z.number({
-    required_error: "Please select a subcontractor",
-  }),
-  rateId: z.number({
-    required_error: "Rate information is required",
-  }),
-
-  // Schedule
-  scheduledStart: z.date({
-    required_error: "Please select a start date",
-  }),
-  scheduledRemoval: z.date().optional(),
-
-  // Applied Rates
-  appliedBaseRate: z.number({
-    required_error: "Base rate is required",
-  }),
-  appliedDumpFee: z.number().nullable(),
-  appliedRentalRate: z.number().nullable(),
-  appliedAdditionalCost: z.number().nullable(),
-
-  // Additional Fields
-  specialInstructions: z.string().optional(),
+const additionalCostSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  amount: z.number().min(0, "Amount must be positive"),
+  isPercentage: z.boolean(),
 });
+
+const formSchema = z
+  .object({
+    // Customer Info
+    name: z.string().min(1, "Required"),
+    email: z.union([z.string().email(), z.string().length(0)]).optional(),
+    phone: z.string().optional(),
+    notes: z.string().optional(),
+
+    // Service Info
+    address: z.string().min(1, "Please enter a valid address"),
+    latitude: z.number(),
+    longitude: z.number(),
+    binSize: z.number().min(1, "Required"),
+    serviceType: z.enum(ServiceType),
+    materialType: z.enum(MaterialType),
+    subcontractorId: z.number({
+      required_error: "Please select a subcontractor",
+    }),
+    rateId: z.number({
+      required_error: "Rate information is required",
+    }),
+
+    // Schedule
+    scheduledStart: z.date({
+      required_error: "Please select a start date",
+    }),
+    scheduledRemoval: z.date().optional(),
+
+    // Applied Rates
+    rateType: z.enum(["flat", "baseAndDump"]),
+    appliedFlatRate: z.number().optional(),
+    appliedBaseRate: z.number().optional(),
+    appliedDumpFee: z.number().optional(),
+    appliedRentalRate: z.number().optional(),
+    appliedAdditionalCosts: z.array(additionalCostSchema),
+
+    // Additional Fields
+    specialInstructions: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.rateType === "flat") {
+        return data.appliedFlatRate !== undefined;
+      } else {
+        return data.appliedBaseRate !== undefined;
+      }
+    },
+    {
+      message: "Please provide the required rate information",
+      path: ["rateType"],
+    },
+  );
 
 export type FormValues = z.infer<typeof formSchema>;
 
@@ -78,10 +98,12 @@ export function NewServiceRequestForm() {
       rateId: undefined,
       scheduledStart: undefined,
       scheduledRemoval: undefined,
+      rateType: "baseAndDump",
+      appliedFlatRate: undefined,
       appliedBaseRate: 0,
-      appliedDumpFee: null,
-      appliedRentalRate: null,
-      appliedAdditionalCost: null,
+      appliedDumpFee: 0,
+      appliedRentalRate: undefined,
+      appliedAdditionalCosts: [],
       specialInstructions: "",
     },
   });
@@ -97,9 +119,9 @@ export function NewServiceRequestForm() {
   };
 
   const { mutate, status } = api.serviceRequest.create.useMutation({
-    onSuccess: (data) => {
+    onSuccess: () => {
       toast({ description: "Service request created successfully" });
-      router.push(`/service-requests/${data?.serviceRequestId}`);
+      router.push(`/service-requests`);
     },
     onError: (error) => {
       toast({
@@ -112,6 +134,19 @@ export function NewServiceRequestForm() {
 
   const onSubmit = (data: FormValues) => {
     const { name, email, phone, notes, ...serviceData } = data;
+
+    // Construct the applied rate structure
+    const appliedRateStructure = {
+      ...(data.rateType === "flat"
+        ? { flatRate: data.appliedFlatRate }
+        : {
+            baseRate: data.appliedBaseRate,
+            dumpFee: data.appliedDumpFee,
+          }),
+      rentalRate: data.appliedRentalRate,
+      additionalCosts: data.appliedAdditionalCosts,
+    };
+
     mutate({
       customerData: {
         name,
@@ -120,16 +155,18 @@ export function NewServiceRequestForm() {
         notes: notes ?? undefined,
       },
       serviceData: {
-        ...serviceData,
+        address: serviceData.address,
         latitude: serviceData.latitude.toString(),
         longitude: serviceData.longitude.toString(),
+        binSize: serviceData.binSize,
+        serviceType: serviceData.serviceType,
+        materialType: serviceData.materialType,
+        subcontractorId: serviceData.subcontractorId,
+        rateId: serviceData.rateId,
         scheduledStart: serviceData.scheduledStart.toISOString(),
-        // Only send if it exists
         scheduledRemoval: serviceData.scheduledRemoval?.toISOString(),
-        appliedBaseRate: serviceData.appliedBaseRate,
-        appliedDumpFee: serviceData.appliedDumpFee,
-        appliedRentalRate: serviceData.appliedRentalRate,
-        appliedAdditionalCost: serviceData.appliedAdditionalCost,
+        appliedRateStructure,
+        specialInstructions: serviceData.specialInstructions,
       },
     });
   };

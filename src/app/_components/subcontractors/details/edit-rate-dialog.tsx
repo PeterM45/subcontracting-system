@@ -9,11 +9,12 @@ import {
 } from "@/components/ui/dialog";
 import {
   Form,
+  FormControl,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-  FormControl,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
@@ -23,37 +24,89 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Pencil } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useFieldArray, useForm } from "react-hook-form";
 import { api } from "~/trpc/react";
-import { useForm } from "react-hook-form";
-import type { DefaultValues } from "react-hook-form";
-import type { Rate, RateFormData } from "~/lib/types";
+import type { Rate } from "~/lib/types";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Pencil, Plus, Trash2 } from "lucide-react";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { formatMaterialType, formatServiceType } from "~/lib/formatting";
+
+// Form validation schema (same as AddRateDialog)
+const additionalCostSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  amount: z.number().min(0, "Amount must be positive"),
+  isPercentage: z.boolean(),
+  description: z.string().optional(),
+});
+
+const formSchema = z
+  .object({
+    binSize: z.number().min(1, "Bin size is required"),
+    serviceType: z.enum(["rolloff", "frontend"]),
+    materialType: z.enum(["waste", "recycling", "concrete", "dirt", "mixed"]),
+    rateType: z.enum(["flat", "baseAndDump"]),
+    flatRate: z.number().optional(),
+    baseRate: z.number().optional(),
+    dumpFee: z.number().optional(),
+    rentalRate: z.number().optional(),
+    additionalCosts: z.array(additionalCostSchema),
+    effectiveDate: z.string().min(1, "Effective date is required"),
+    expiryDate: z.string().optional(),
+    notes: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.rateType === "flat") {
+        return data.flatRate !== undefined;
+      } else {
+        return data.baseRate !== undefined;
+      }
+    },
+    {
+      message: "Please provide the required rate information",
+      path: ["rateType"],
+    },
+  );
+
+type FormData = z.infer<typeof formSchema>;
 
 export function EditRateDialog({ rate }: { rate: Rate }) {
   const [open, setOpen] = useState(false);
-  const utils = api.useUtils();
 
   // Create defaultValues helper function
-  const getDefaultValues = () => ({
-    binSize: rate.binSize,
-    serviceType: rate.serviceType,
-    materialType: rate.materialType,
-    baseRate: Number(rate.baseRate),
-    dumpFee: rate.dumpFee ? Number(rate.dumpFee) : undefined,
-    rentalRate: rate.rentalRate ? Number(rate.rentalRate) : undefined,
-    additionalCost: rate.additionalCost
-      ? Number(rate.additionalCost)
-      : undefined,
-    effectiveDate: rate.effectiveDate.toISOString().split("T")[0],
-    expiryDate: rate.expiryDate
-      ? rate.expiryDate.toISOString().split("T")[0]
-      : undefined,
-    notes: rate.notes ?? undefined,
+  const getDefaultValues = (): FormData => {
+    const rateStructure = rate.rateStructure;
+    return {
+      binSize: rate.binSize,
+      serviceType: rate.serviceType,
+      materialType: rate.materialType,
+      rateType: rateStructure.flatRate !== undefined ? "flat" : "baseAndDump",
+      flatRate: rateStructure.flatRate,
+      baseRate: rateStructure.baseRate,
+      dumpFee: rateStructure.dumpFee,
+      rentalRate: rateStructure.rentalRate,
+      additionalCosts: rateStructure.additionalCosts,
+      effectiveDate: rate.effectiveDate?.toISOString().split("T")[0] ?? "",
+      expiryDate: rate.expiryDate
+        ? rate.expiryDate.toISOString().split("T")[0]
+        : undefined,
+      notes: rate.notes ?? undefined,
+    };
+  };
+
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: getDefaultValues(),
   });
 
-  const form = useForm<RateFormData>({
-    defaultValues: getDefaultValues() as DefaultValues<RateFormData>,
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "additionalCosts",
   });
 
   // Reset form when dialog opens
@@ -62,6 +115,9 @@ export function EditRateDialog({ rate }: { rate: Rate }) {
       form.reset(getDefaultValues());
     }
   }, [open, rate]);
+
+  const utils = api.useUtils();
+  const rateType = form.watch("rateType");
 
   const editRate = api.rate.update.useMutation({
     onSuccess: async () => {
@@ -72,18 +128,28 @@ export function EditRateDialog({ rate }: { rate: Rate }) {
     },
   });
 
-  const onSubmit = (data: RateFormData) => {
+  const onSubmit = (data: FormData) => {
+    // Construct the rate structure based on form data
+    const rateStructure = {
+      ...(data.rateType === "flat"
+        ? { flatRate: data.flatRate }
+        : {
+            baseRate: data.baseRate,
+            dumpFee: data.dumpFee,
+          }),
+      rentalRate: data.rentalRate,
+      additionalCosts: data.additionalCosts,
+    };
+
     editRate.mutate({
       id: rate.id,
-      ...data,
+      binSize: data.binSize,
+      serviceType: data.serviceType,
+      materialType: data.materialType,
+      rateStructure,
       effectiveDate: new Date(data.effectiveDate),
       expiryDate: data.expiryDate ? new Date(data.expiryDate) : undefined,
-      baseRate: Number(data.baseRate),
-      dumpFee: data.dumpFee ? Number(data.dumpFee) : undefined,
-      rentalRate: data.rentalRate ? Number(data.rentalRate) : undefined,
-      additionalCost: data.additionalCost
-        ? Number(data.additionalCost)
-        : undefined,
+      notes: data.notes,
     });
   };
 
@@ -100,147 +166,195 @@ export function EditRateDialog({ rate }: { rate: Rate }) {
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="binSize"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Bin Size</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      {...field}
-                      value={field.value ?? ""}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        field.onChange(
-                          value === "" ? undefined : Number(value),
-                        );
-                      }}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="serviceType"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Service Type</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
+            {/* Basic Information */}
+            <div className="space-y-4">
+              <FormField
+                control={form.control}
+                name="binSize"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Bin Size</FormLabel>
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select service type" />
-                      </SelectTrigger>
+                      <Input
+                        type="number"
+                        {...field}
+                        onChange={(e) => field.onChange(Number(e.target.value))}
+                      />
                     </FormControl>
-                    <SelectContent>
-                      <SelectItem value="rolloff">
-                        {formatServiceType("rolloff")}
-                      </SelectItem>
-                      <SelectItem value="frontend">
-                        {formatServiceType("frontend")}
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="serviceType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Service Type</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select service type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="rolloff">
+                          {formatServiceType("rolloff")}
+                        </SelectItem>
+                        <SelectItem value="frontend">
+                          {formatServiceType("frontend")}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="materialType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Material Type</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select material type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="waste">
+                          {formatMaterialType("waste")}
+                        </SelectItem>
+                        <SelectItem value="recycling">
+                          {formatMaterialType("recycling")}
+                        </SelectItem>
+                        <SelectItem value="concrete">
+                          {formatMaterialType("concrete")}
+                        </SelectItem>
+                        <SelectItem value="dirt">
+                          {formatMaterialType("dirt")}
+                        </SelectItem>
+                        <SelectItem value="mixed">
+                          {formatMaterialType("mixed")}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Rate Type Selection */}
+            <FormField
+              control={form.control}
+              name="rateType"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel>Rate Type</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      className="flex flex-col space-y-1"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="flat" id="flat" />
+                        <Label htmlFor="flat">Flat Rate</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="baseAndDump" id="baseAndDump" />
+                        <Label htmlFor="baseAndDump">
+                          Base Rate + Dump Fee
+                        </Label>
+                      </div>
+                    </RadioGroup>
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="materialType"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Material Type</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
+            {/* Rate Fields */}
+            {rateType === "flat" ? (
+              <FormField
+                control={form.control}
+                name="flatRate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Flat Rate</FormLabel>
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select material type" />
-                      </SelectTrigger>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        {...field}
+                        onChange={(e) => field.onChange(Number(e.target.value))}
+                      />
                     </FormControl>
-                    <SelectContent>
-                      <SelectItem value="waste">
-                        {formatMaterialType("waste")}
-                      </SelectItem>
-                      <SelectItem value="recycling">
-                        {formatMaterialType("recycling")}
-                      </SelectItem>
-                      <SelectItem value="concrete">
-                        {formatMaterialType("concrete")}
-                      </SelectItem>
-                      <SelectItem value="dirt">
-                        {formatMaterialType("dirt")}
-                      </SelectItem>
-                      <SelectItem value="mixed">
-                        {formatMaterialType("mixed")}
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ) : (
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="baseRate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Base Rate</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(Number(e.target.value))
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <FormField
-              control={form.control}
-              name="baseRate"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Base Rate</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      {...field}
-                      value={field.value ?? ""}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        field.onChange(
-                          value === "" ? undefined : Number(value),
-                        );
-                      }}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                <FormField
+                  control={form.control}
+                  name="dumpFee"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Dump Fee</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(
+                              e.target.value
+                                ? Number(e.target.value)
+                                : undefined,
+                            )
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            )}
 
-            <FormField
-              control={form.control}
-              name="dumpFee"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Dump Fee (Optional)</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      {...field}
-                      value={field.value ?? ""}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        field.onChange(
-                          value === "" ? undefined : Number(value),
-                        );
-                      }}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
+            {/* Rental Rate */}
             <FormField
               control={form.control}
               name="rentalRate"
@@ -252,13 +366,11 @@ export function EditRateDialog({ rate }: { rate: Rate }) {
                       type="number"
                       step="0.01"
                       {...field}
-                      value={field.value ?? ""}
-                      onChange={(e) => {
-                        const value = e.target.value;
+                      onChange={(e) =>
                         field.onChange(
-                          value === "" ? undefined : Number(value),
-                        );
-                      }}
+                          e.target.value ? Number(e.target.value) : undefined,
+                        )
+                      }
                     />
                   </FormControl>
                   <FormMessage />
@@ -266,31 +378,104 @@ export function EditRateDialog({ rate }: { rate: Rate }) {
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="additionalCost"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Additional Rate (Optional)</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      {...field}
-                      value={field.value ?? ""}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        field.onChange(
-                          value === "" ? undefined : Number(value),
-                        );
-                      }}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Additional Costs */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label>Additional Costs</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    append({ name: "", amount: 0, isPercentage: false })
+                  }
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Cost
+                </Button>
+              </div>
 
+              {fields.map((field, index) => (
+                <Card key={field.id}>
+                  <CardContent className="pt-6">
+                    <div className="grid gap-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name={`additionalCosts.${index}.name`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Name</FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name={`additionalCosts.${index}.amount`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Amount</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  {...field}
+                                  onChange={(e) =>
+                                    field.onChange(Number(e.target.value))
+                                  }
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <FormField
+                          control={form.control}
+                          name={`additionalCosts.${index}.isPercentage`}
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                              <div className="space-y-0.5">
+                                <FormLabel className="text-base">
+                                  Percentage
+                                </FormLabel>
+                                <FormDescription>
+                                  Is this a percentage of the base amount?
+                                </FormDescription>
+                              </div>
+                              <FormControl>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          onClick={() => remove(index)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Dates and Notes */}
             <FormField
               control={form.control}
               name="effectiveDate"

@@ -80,16 +80,32 @@ export function ServiceFormSection({
 
   const applyRate = (rate: Rate) => {
     form.setValue("rateId", rate.id);
-    form.setValue("appliedBaseRate", Number(rate.baseRate));
-    form.setValue("appliedDumpFee", rate.dumpFee ? Number(rate.dumpFee) : null);
+
+    // Apply the rate structure
+    form.setValue(
+      "rateType",
+      rate.rateStructure.flatRate !== undefined ? "flat" : "baseAndDump",
+    );
+
+    // Set the rate structure based on type
+    if (rate.rateStructure.flatRate !== undefined) {
+      form.setValue("appliedFlatRate", rate.rateStructure.flatRate);
+      form.setValue("appliedBaseRate", undefined);
+      form.setValue("appliedDumpFee", undefined);
+    } else {
+      form.setValue("appliedFlatRate", undefined);
+      form.setValue("appliedBaseRate", rate.rateStructure.baseRate);
+      form.setValue("appliedDumpFee", rate.rateStructure.dumpFee ?? undefined);
+    }
+
+    // Set other rates
     form.setValue(
       "appliedRentalRate",
-      rate.rentalRate ? Number(rate.rentalRate) : null,
+      rate.rateStructure.rentalRate ?? undefined,
     );
-    form.setValue(
-      "appliedAdditionalCost",
-      rate.additionalCost ? Number(rate.additionalCost) : null,
-    );
+
+    // Set additional costs
+    form.setValue("appliedAdditionalCosts", rate.rateStructure.additionalCosts);
   };
 
   // Filter and sort rates based on form values
@@ -305,27 +321,30 @@ export function ServiceFormSection({
                           formValues.rateId === rate.id ? "default" : "outline"
                         }
                       >
-                        ${Number(rate.baseRate).toFixed(2)}
+                        {rate.rateStructure.flatRate !== undefined
+                          ? `$${rate.rateStructure.flatRate.toFixed(2)} Flat`
+                          : `$${rate.rateStructure.baseRate!.toFixed(2)}`}
                       </Badge>
                     </div>
-                    {(rate.dumpFee ??
-                      rate.rentalRate ??
-                      rate.additionalCost) && (
+                    {(rate.rateStructure.dumpFee ??
+                      rate.rateStructure.rentalRate ??
+                      rate.rateStructure.additionalCosts.length > 0) && (
                       <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
-                        {rate.dumpFee && (
+                        {rate.rateStructure.dumpFee && (
                           <span>
-                            Dump Fee: ${Number(rate.dumpFee).toFixed(2)}
+                            Dump Fee: ${rate.rateStructure.dumpFee.toFixed(2)}
                           </span>
                         )}
-                        {rate.rentalRate && (
+                        {rate.rateStructure.rentalRate && (
                           <span>
-                            • Rental: ${Number(rate.rentalRate).toFixed(2)}/day
+                            • Rental: $
+                            {rate.rateStructure.rentalRate.toFixed(2)}/day
                           </span>
                         )}
-                        {rate.additionalCost && (
+                        {rate.rateStructure.additionalCosts.length > 0 && (
                           <span>
-                            • Additional: $
-                            {Number(rate.additionalCost).toFixed(2)}
+                            • Additional Costs:{" "}
+                            {rate.rateStructure.additionalCosts.length}
                           </span>
                         )}
                       </div>

@@ -6,6 +6,13 @@ import { Button } from "~/components/ui/button";
 import { Plus, Loader2 } from "lucide-react";
 import Link from "next/link";
 
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(amount);
+};
+
 export default function ServiceRequestsPage() {
   const { data: serviceRequests, isLoading } =
     api.serviceRequest.getAll.useQuery();
@@ -40,7 +47,6 @@ export default function ServiceRequestsPage() {
           </Link>
         </Button>
       </div>
-
       {!serviceRequests?.length ? (
         <Card className="p-6">
           <p className="text-center text-muted-foreground">
@@ -50,7 +56,11 @@ export default function ServiceRequestsPage() {
       ) : (
         <div className="space-y-4">
           {serviceRequests.map((request) => (
-            <div className="block" key={request.id}>
+            <Link
+              href={`/service-requests/${request.id}`}
+              key={request.id}
+              className="block"
+            >
               <Card className="p-6 transition-colors hover:bg-accent">
                 <div className="flex items-start justify-between">
                   <div>
@@ -78,16 +88,33 @@ export default function ServiceRequestsPage() {
                   </div>
                   <div className="text-right">
                     <p className="font-medium">
-                      $
-                      {typeof request.appliedBaseRate === "string"
-                        ? parseFloat(request.appliedBaseRate).toFixed(2)
-                        : request.appliedBaseRate.toFixed(2)}
+                      {request.appliedRateStructure.flatRate !== undefined
+                        ? `${formatCurrency(request.appliedRateStructure.flatRate)} Flat`
+                        : formatCurrency(
+                            request.appliedRateStructure.baseRate!,
+                          )}
                     </p>
-                    <p className="text-sm text-muted-foreground">Base Rate</p>
+                    <p className="text-sm text-muted-foreground">
+                      {request.appliedRateStructure.flatRate !== undefined
+                        ? "Flat Rate"
+                        : "Base Rate"}
+                    </p>
+                    {request.appliedRateStructure.additionalCosts.length >
+                      0 && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        +{request.appliedRateStructure.additionalCosts.length}{" "}
+                        additional costs
+                      </p>
+                    )}
                   </div>
                 </div>
+                {request.specialInstructions && (
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Note: {request.specialInstructions}
+                  </p>
+                )}
               </Card>
-            </div>
+            </Link>
           ))}
         </div>
       )}

@@ -9,12 +9,26 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { api } from "~/trpc/react";
-
 import { AddRateDialog } from "~/app/_components/subcontractors/details/add-rate-dialog";
 import { EditRateDialog } from "~/app/_components/subcontractors/details/edit-rate-dialog";
-import { formatServiceType, formatMaterialType } from "~/lib/formatting";
-import { Trash2 } from "lucide-react";
+import {
+  formatServiceType,
+  formatMaterialType,
+  formatCurrency,
+} from "~/lib/formatting";
+import { Trash2, Plus } from "lucide-react";
 import type { Rate, Subcontractor } from "~/lib/types";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export function RatesTable({
   rates,
@@ -45,10 +59,9 @@ export function RatesTable({
               <TableHead>Service</TableHead>
               <TableHead>Material</TableHead>
               <TableHead>Size</TableHead>
-              <TableHead className="text-right">Base Rate</TableHead>
-              <TableHead className="text-right">Dump Fee</TableHead>
+              <TableHead className="text-right">Rate Structure</TableHead>
               <TableHead className="text-right">Rental Rate</TableHead>
-              <TableHead className="text-right">Additional Cost</TableHead>
+              <TableHead className="text-right">Additional Costs</TableHead>
               <TableHead className="text-right">Notes</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -59,18 +72,78 @@ export function RatesTable({
                 <TableCell>{formatServiceType(rate.serviceType)}</TableCell>
                 <TableCell>{formatMaterialType(rate.materialType)}</TableCell>
                 <TableCell>{rate.binSize}</TableCell>
-                <TableCell className="text-right">${rate.baseRate}</TableCell>
                 <TableCell className="text-right">
-                  {rate.dumpFee ? `$${rate.dumpFee}` : "-"}
+                  {rate.rateStructure.flatRate !== undefined ? (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="cursor-help">
+                            {formatCurrency(rate.rateStructure.flatRate)}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Flat Rate</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ) : (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="cursor-help">
+                            {formatCurrency(rate.rateStructure.baseRate)} +{" "}
+                            {formatCurrency(rate.rateStructure.dumpFee)}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Base Rate + Dump Fee</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
                 </TableCell>
                 <TableCell className="text-right">
-                  {rate.rentalRate ? `$${rate.rentalRate}` : "-"}
+                  {formatCurrency(rate.rateStructure.rentalRate)}
                 </TableCell>
                 <TableCell className="text-right">
-                  {rate.additionalCost ? `$${rate.additionalCost}` : "-"}
+                  {rate.rateStructure.additionalCosts.length > 0 ? (
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          className="h-8 px-2 hover:bg-transparent"
+                        >
+                          <Plus className="mr-1 h-4 w-4" />
+                          {rate.rateStructure.additionalCosts.length} costs
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-80">
+                        <div className="space-y-2">
+                          {rate.rateStructure.additionalCosts.map(
+                            (cost, index) => (
+                              <div
+                                key={index}
+                                className="flex items-center justify-between"
+                              >
+                                <span>{cost.name}</span>
+                                <span>
+                                  {cost.isPercentage
+                                    ? `${cost.amount}%`
+                                    : formatCurrency(cost.amount)}
+                                </span>
+                              </div>
+                            ),
+                          )}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  ) : (
+                    "-"
+                  )}
                 </TableCell>
-                <TableCell className="text-right">{rate.notes}</TableCell>
-
+                <TableCell className="text-right">
+                  {rate.notes ?? "-"}
+                </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
                     <EditRateDialog rate={rate} />

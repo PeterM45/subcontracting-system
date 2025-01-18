@@ -6,9 +6,15 @@ import {
   varchar,
   text,
   decimal,
+  jsonb,
 } from "drizzle-orm/pg-core";
 
-import { ServiceType, MaterialType } from "@/lib/types";
+import {
+  ServiceType,
+  MaterialType,
+  type AdditionalCostType,
+  type RateStructure,
+} from "@/lib/types";
 
 export const subcontractors = pgTable("subcontractor", {
   id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
@@ -43,11 +49,8 @@ export const rates = pgTable("rate", {
     enum: MaterialType,
   }).notNull(),
 
-  // Core Rates
-  baseRate: decimal("base_rate", { precision: 10, scale: 2 }).notNull(),
-  dumpFee: decimal("dump_fee", { precision: 10, scale: 2 }),
-  rentalRate: decimal("rental_rate", { precision: 10, scale: 2 }),
-  additionalCost: decimal("additional_cost", { precision: 10, scale: 2 }),
+  // New rate structure using JSON
+  rateStructure: jsonb("rate_structure").$type<RateStructure>().notNull(),
 
   effectiveDate: timestamp("effective_date").notNull(),
   expiryDate: timestamp("expiry_date"),
@@ -94,20 +97,10 @@ export const serviceRequests = pgTable("service_request", {
   }).notNull(),
   scheduledRemoval: timestamp("scheduled_removal", { withTimezone: true }),
 
-  // Pricing Adjustments (can override rate table values)
-  appliedBaseRate: decimal("applied_base_rate", {
-    precision: 10,
-    scale: 2,
-  }).notNull(),
-  appliedDumpFee: decimal("applied_dump_fee", { precision: 10, scale: 2 }),
-  appliedRentalRate: decimal("applied_rental_rate", {
-    precision: 10,
-    scale: 2,
-  }),
-  appliedAdditionalCost: decimal("applied_additional_cost", {
-    precision: 10,
-    scale: 2,
-  }),
+  // Updated pricing structure to match rates
+  appliedRateStructure: jsonb("applied_rate_structure")
+    .$type<RateStructure>()
+    .notNull(),
 
   // Additional Fields
   specialInstructions: text("special_instructions"),

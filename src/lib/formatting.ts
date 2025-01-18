@@ -14,3 +14,11 @@ export const formatMaterialType = (
     dirt: "Dirt",
     mixed: "Mixed",
   })[type];
+
+export const formatCurrency = (amount: number | undefined | null) => {
+  if (amount === undefined || amount === null) return "-";
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "CAD",
+  }).format(amount);
+};
