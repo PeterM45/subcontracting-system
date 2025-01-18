@@ -25,8 +25,8 @@ A web application to manage subcontractors, service requests, and rates for wast
 1. Clone the repository:
 
 ```bash
-git clone [your-repo-url]
-cd [your-repo-name]
+git clone https://github.com/PeterM45/subcontracting-system
+cd subcontracting-system
 ```
 
 2. Install dependencies:
