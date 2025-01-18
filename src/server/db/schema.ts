@@ -9,12 +9,7 @@ import {
   jsonb,
 } from "drizzle-orm/pg-core";
 
-import {
-  ServiceType,
-  MaterialType,
-  type AdditionalCostType,
-  type RateStructure,
-} from "@/lib/types";
+import { ServiceType, MaterialType, type RateStructure } from "@/lib/types";
 
 export const subcontractors = pgTable("subcontractor", {
   id: integer("id").primaryKey().generatedByDefaultAsIdentity(),

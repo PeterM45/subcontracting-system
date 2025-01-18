@@ -1,29 +1,132 @@
-# Create T3 App
+# Subcontracting System
 
-This is a [T3 Stack](https://create.t3.gg/) project bootstrapped with `create-t3-app`.
+A web application to manage subcontractors, service requests, and rates for waste businesses.
 
-## What's next? How do I make an app with this?
+## Tech Stack
 
-We try to keep this project as simple as possible, so you can start with just the scaffolding we set up for you, and add additional things later when they become necessary.
+- **Framework**: Next.js 15 (App Router)
+- **Styling**: Tailwind CSS + shadcn/ui
+- **Database**: Neon (Postgres) + Drizzle ORM
+- **API**: tRPC
+- **Authentication**: Clerk
+- **Language**: TypeScript
+- **Linting**: ESLint (Strict Configuration)
 
-If you are not familiar with the different technologies used in this project, please refer to the respective docs. If you still are in the wind, please join our [Discord](https://t3.gg/discord) and ask for help.
+## Getting Started
 
-- [Next.js](https://nextjs.org)
-- [NextAuth.js](https://next-auth.js.org)
-- [Prisma](https://prisma.io)
-- [Drizzle](https://orm.drizzle.team)
-- [Tailwind CSS](https://tailwindcss.com)
-- [tRPC](https://trpc.io)
+### Prerequisites
 
-## Learn More
+- Node.js 18+
+- pnpm (recommended) or npm
+- Git
 
-To learn more about the [T3 Stack](https://create.t3.gg/), take a look at the following resources:
+### Installation
 
-- [Documentation](https://create.t3.gg/)
-- [Learn the T3 Stack](https://create.t3.gg/en/faq#what-learning-resources-are-currently-available) — Check out these awesome tutorials
+1. Clone the repository:
 
-You can check out the [create-t3-app GitHub repository](https://github.com/t3-oss/create-t3-app) — your feedback and contributions are welcome!
+```bash
+git clone [your-repo-url]
+cd [your-repo-name]
+```
 
-## How do I deploy this?
+2. Install dependencies:
 
-Follow our deployment guides for [Vercel](https://create.t3.gg/en/deployment/vercel), [Netlify](https://create.t3.gg/en/deployment/netlify) and [Docker](https://create.t3.gg/en/deployment/docker) for more information.
+```bash
+pnpm install
+```
+
+3. Create a `.env` file in the root directory with the following variables:
+
+```env
+DATABASE_URL=
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
+CLERK_SECRET_KEY=
+NEXT_PUBLIC_MAPBOX_TOKEN=
+```
+
+4. Start the development server:
+
+```bash
+pnpm dev
+```
+
+Visit `http://localhost:3000` to see your application.
+
+## Available Scripts
+
+```bash
+# Development
+pnpm dev          # Start development server with turbo
+pnpm start        # Start production server
+pnpm preview      # Build and start for preview
+
+# Building
+pnpm build        # Build for production
+
+# Database
+pnpm db:generate  # Generate Drizzle migrations
+pnpm db:migrate   # Run migrations
+pnpm db:push      # Push schema changes
+pnpm db:studio    # Open Drizzle Studio
+
+# Code Quality
+pnpm check        # Run linting and type checking
+pnpm lint         # Run ESLint
+pnpm lint:fix     # Fix ESLint issues
+pnpm typecheck    # Run TypeScript checks
+pnpm format:check # Check formatting
+pnpm format:write # Fix formatting
+```
+
+## Project Structure
+
+```
+├── src/
+│   ├── app/               # Next.js App Router pages and layouts
+│   │   ├── @modal/       # Modal interceptors
+│   │   ├── _components/  # Page-specific components
+│   │   └── api/         # API routes
+│   ├── components/       # Shared UI components
+│   │   └── ui/          # shadcn/ui components
+│   ├── server/          # Backend logic
+│   │   ├── api/         # tRPC routers and procedures
+│   │   └── db/          # Database schema and config
+│   ├── hooks/           # Custom React hooks
+│   ├── lib/             # Utility functions
+│   ├── styles/          # Global styles
+│   └── trpc/            # tRPC client setup
+├── public/              # Static assets
+├── drizzle.config.ts    # Drizzle configuration
+├── next.config.js       # Next.js configuration
+└── tsconfig.json        # TypeScript configuration
+```
+
+## Development Workflow
+
+### Database Management
+
+The project uses Drizzle ORM with a Neon Postgres database. Use the provided scripts to manage your database:
+
+- `pnpm db:generate` to create new migrations
+- `pnpm db:push` to apply schema changes
+- `pnpm db:studio` to open Drizzle Studio for database management
+
+### Code Quality
+
+The project maintains high code quality standards through:
+
+- Strict TypeScript configuration
+- ESLint with strict rules
+- Prettier for consistent formatting
+- Pre-configured shadcn/ui components
+
+Run `pnpm check` before committing to ensure your code meets the project's standards.
+
+### API Development
+
+tRPC routes are defined in `src/server/api/routers/`. The project includes routers for:
+
+- Customers
+- Service Requests
+- Subcontractors
+- Rates

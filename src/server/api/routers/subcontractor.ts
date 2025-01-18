@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { eq, and, or, gt, lt, sql, inArray } from "drizzle-orm";
+import { eq, or, gt, sql } from "drizzle-orm";
 import { createTRPCRouter, publicProcedure } from "../trpc";
 import { subcontractors, rates } from "~/server/db/schema";
 import { ServiceType, MaterialType } from "~/lib/types";
