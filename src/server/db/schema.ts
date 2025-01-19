@@ -113,12 +113,17 @@ export const customersRelations = relations(customers, ({ many }) => ({
   serviceRequests: many(serviceRequests),
 }));
 
+// In your schema.ts
 export const serviceRequestsRelations = relations(
   serviceRequests,
   ({ one }) => ({
     customer: one(customers, {
       fields: [serviceRequests.customerId],
       references: [customers.id],
+    }),
+    subcontractor: one(subcontractors, {
+      fields: [serviceRequests.subcontractorId],
+      references: [subcontractors.id],
     }),
   }),
 );

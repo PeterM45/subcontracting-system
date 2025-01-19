@@ -5,6 +5,7 @@ import { Card } from "~/components/ui/card";
 import { Loader2 } from "lucide-react";
 import { notFound } from "next/navigation";
 import { formatCurrency } from "~/lib/formatting";
+import GeneratePDFButton from "~/app/_components/service-requests/subcontractor-agreement/generate-pdf-button";
 import { use } from "react";
 
 export default function ServiceRequestPage({
@@ -34,7 +35,10 @@ export default function ServiceRequestPage({
 
   return (
     <div className="container mx-auto p-6">
-      <h1 className="mb-6 text-2xl font-bold">Service Request Details</h1>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="mb-6 text-2xl font-bold">Service Request Details</h1>
+        <GeneratePDFButton serviceRequest={request} />
+      </div>
 
       <div className="space-y-6">
         {/* Customer Information */}

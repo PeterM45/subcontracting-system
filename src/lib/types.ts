@@ -72,3 +72,27 @@ export type RateStructure = {
   // Array of additional costs
   additionalCosts: AdditionalCostType[];
 };
+
+export type ServiceRequestData = {
+  id: number;
+  address: string;
+  binSize: number;
+  serviceType: ServiceType;
+  materialType: MaterialType;
+  scheduledStart: Date;
+  scheduledRemoval: Date | null;
+  specialInstructions: string | null;
+  appliedRateStructure: RateStructure;
+  serviceStartDate: Date;
+  customer: {
+    name: string;
+    email: string | null;
+    phone: string | null;
+  };
+  subcontractor: {
+    name: string;
+    contact: string | null;
+    phone: string | null;
+    email: string | null;
+  };
+};

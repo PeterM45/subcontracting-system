@@ -117,6 +117,7 @@ export const serviceRequestRouter = createTRPCRouter({
       where: (serviceRequests, { eq }) => eq(serviceRequests.id, input),
       with: {
         customer: true,
+        subcontractor: true,
       },
     });
   }),
