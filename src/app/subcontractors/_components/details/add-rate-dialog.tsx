@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -27,16 +27,16 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useFieldArray, useForm } from "react-hook-form";
 import { api } from "~/trpc/react";
-import type { Rate } from "~/lib/types";
+import type { Subcontractor } from "~/types";
+import { ServiceTypeValues, MaterialTypeValues } from "~/types/constants";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { formatMaterialType, formatServiceType } from "~/lib/formatting";
 
-// Form validation schema (same as AddRateDialog)
+// Form validation schema
 const additionalCostSchema = z.object({
   name: z.string().min(1, "Name is required"),
   amount: z.number().min(0, "Amount must be positive"),
@@ -47,8 +47,8 @@ const additionalCostSchema = z.object({
 const formSchema = z
   .object({
     binSize: z.number().min(1, "Bin size is required"),
-    serviceType: z.enum(["rolloff", "frontend"]),
-    materialType: z.enum(["waste", "recycling", "concrete", "dirt", "mixed"]),
+    serviceType: z.enum(ServiceTypeValues),
+    materialType: z.enum(MaterialTypeValues),
     rateType: z.enum(["flat", "baseAndDump"]),
     flatRate: z.number().optional(),
     baseRate: z.number().optional(),
@@ -75,33 +75,21 @@ const formSchema = z
 
 type FormData = z.infer<typeof formSchema>;
 
-export function EditRateDialog({ rate }: { rate: Rate }) {
+export function AddRateDialog({
+  subcontractor,
+}: {
+  subcontractor: Subcontractor;
+}) {
   const [open, setOpen] = useState(false);
-
-  // Create defaultValues helper function
-  const getDefaultValues = (): FormData => {
-    const rateStructure = rate.rateStructure;
-    return {
-      binSize: rate.binSize,
-      serviceType: rate.serviceType,
-      materialType: rate.materialType,
-      rateType: rateStructure.flatRate !== undefined ? "flat" : "baseAndDump",
-      flatRate: rateStructure.flatRate,
-      baseRate: rateStructure.baseRate,
-      dumpFee: rateStructure.dumpFee,
-      rentalRate: rateStructure.rentalRate,
-      additionalCosts: rateStructure.additionalCosts,
-      effectiveDate: rate.effectiveDate?.toISOString().split("T")[0] ?? "",
-      expiryDate: rate.expiryDate
-        ? rate.expiryDate.toISOString().split("T")[0]
-        : undefined,
-      notes: rate.notes ?? undefined,
-    };
-  };
-
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
-    defaultValues: getDefaultValues(),
+    defaultValues: {
+      rateType: "baseAndDump",
+      additionalCosts: [],
+      effectiveDate: "",
+      expiryDate: "",
+      notes: "",
+    },
   });
 
   const { fields, append, remove } = useFieldArray({
@@ -109,22 +97,16 @@ export function EditRateDialog({ rate }: { rate: Rate }) {
     name: "additionalCosts",
   });
 
-  // Reset form when dialog opens
-  useEffect(() => {
-    if (open) {
-      form.reset(getDefaultValues());
-    }
-  }, [open, rate]);
-
   const utils = api.useUtils();
   const rateType = form.watch("rateType");
 
-  const editRate = api.rate.update.useMutation({
+  const addRate = api.rate.create.useMutation({
     onSuccess: async () => {
       await utils.rate.getBySubcontractor.invalidate({
-        subcontractorId: rate.subcontractorId,
+        subcontractorId: subcontractor.id,
       });
       setOpen(false);
+      form.reset();
     },
   });
 
@@ -141,8 +123,8 @@ export function EditRateDialog({ rate }: { rate: Rate }) {
       additionalCosts: data.additionalCosts,
     };
 
-    editRate.mutate({
-      id: rate.id,
+    addRate.mutate({
+      subcontractorId: subcontractor.id,
       binSize: data.binSize,
       serviceType: data.serviceType,
       materialType: data.materialType,
@@ -156,13 +138,11 @@ export function EditRateDialog({ rate }: { rate: Rate }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-8 w-8">
-          <Pencil className="h-4 w-4" />
-        </Button>
+        <Button>Add Rate</Button>
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Edit Rate</DialogTitle>
+          <DialogTitle>Add New Rate</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -178,7 +158,11 @@ export function EditRateDialog({ rate }: { rate: Rate }) {
                       <Input
                         type="number"
                         {...field}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
+                        value={field.value || ""} // Handle 0 and undefined cases
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          field.onChange(value === "" ? 0 : Number(value));
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -202,12 +186,8 @@ export function EditRateDialog({ rate }: { rate: Rate }) {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="rolloff">
-                          {formatServiceType("rolloff")}
-                        </SelectItem>
-                        <SelectItem value="frontend">
-                          {formatServiceType("frontend")}
-                        </SelectItem>
+                        <SelectItem value="rolloff">Roll Off</SelectItem>
+                        <SelectItem value="frontend">Front End</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -231,21 +211,11 @@ export function EditRateDialog({ rate }: { rate: Rate }) {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="waste">
-                          {formatMaterialType("waste")}
-                        </SelectItem>
-                        <SelectItem value="recycling">
-                          {formatMaterialType("recycling")}
-                        </SelectItem>
-                        <SelectItem value="concrete">
-                          {formatMaterialType("concrete")}
-                        </SelectItem>
-                        <SelectItem value="dirt">
-                          {formatMaterialType("dirt")}
-                        </SelectItem>
-                        <SelectItem value="mixed">
-                          {formatMaterialType("mixed")}
-                        </SelectItem>
+                        <SelectItem value="waste">Waste</SelectItem>
+                        <SelectItem value="recycling">Recycling</SelectItem>
+                        <SelectItem value="concrete">Concrete</SelectItem>
+                        <SelectItem value="dirt">Dirt</SelectItem>
+                        <SelectItem value="mixed">Mixed</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -295,9 +265,12 @@ export function EditRateDialog({ rate }: { rate: Rate }) {
                     <FormControl>
                       <Input
                         type="number"
-                        step="0.01"
                         {...field}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
+                        value={field.value ?? ""} // Handle 0 and undefined cases
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          field.onChange(value === "" ? 0 : Number(value));
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -315,11 +288,12 @@ export function EditRateDialog({ rate }: { rate: Rate }) {
                       <FormControl>
                         <Input
                           type="number"
-                          step="0.01"
                           {...field}
-                          onChange={(e) =>
-                            field.onChange(Number(e.target.value))
-                          }
+                          value={field.value ?? ""} // Handle 0 and undefined cases
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            field.onChange(value === "" ? 0 : Number(value));
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
@@ -336,15 +310,12 @@ export function EditRateDialog({ rate }: { rate: Rate }) {
                       <FormControl>
                         <Input
                           type="number"
-                          step="0.01"
                           {...field}
-                          onChange={(e) =>
-                            field.onChange(
-                              e.target.value
-                                ? Number(e.target.value)
-                                : undefined,
-                            )
-                          }
+                          value={field.value ?? ""} // Handle 0 and undefined cases
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            field.onChange(value === "" ? 0 : Number(value));
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
@@ -364,13 +335,12 @@ export function EditRateDialog({ rate }: { rate: Rate }) {
                   <FormControl>
                     <Input
                       type="number"
-                      step="0.01"
                       {...field}
-                      onChange={(e) =>
-                        field.onChange(
-                          e.target.value ? Number(e.target.value) : undefined,
-                        )
-                      }
+                      value={field.value ?? ""} // Handle 0 and undefined cases
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        field.onChange(value === "" ? 0 : Number(value));
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
@@ -526,8 +496,8 @@ export function EditRateDialog({ rate }: { rate: Rate }) {
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={editRate.status === "pending"}>
-                {editRate.status === "pending" ? "Saving..." : "Save Changes"}
+              <Button type="submit" disabled={addRate.status === "pending"}>
+                {addRate.status === "pending" ? "Adding..." : "Add Rate"}
               </Button>
             </div>
           </form>

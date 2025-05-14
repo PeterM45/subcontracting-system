@@ -1,4 +1,4 @@
-import type { RateStructure } from "~/lib/types";
+import type { RateStructure } from "~/types/index";
 
 export const calculateTotalCost = (rateStructure: RateStructure): number => {
   let baseAmount = 0;

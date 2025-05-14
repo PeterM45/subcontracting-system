@@ -2,7 +2,7 @@
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
-import type { ServiceRequestData } from "~/lib/types";
+import type { ServiceRequestData } from "~/types/index";
 
 // Dynamically import the PDF componen
 const PDFDownload = dynamic(() => import("./pdf-document"), {

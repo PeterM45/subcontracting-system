@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { format } from "date-fns";
 import { formatCurrency } from "~/lib/formatting";
-import type { ServiceRequestData } from "~/lib/types";
+import type { ServiceRequestData } from "~/types/index";
 import { calculateTotalCost } from "~/lib/rate-utils";
 
 const styles = StyleSheet.create({

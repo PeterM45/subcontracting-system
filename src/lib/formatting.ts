@@ -1,19 +1,13 @@
-export const formatServiceType = (type: "rolloff" | "frontend") =>
-  ({
-    rolloff: "Roll Off",
-    frontend: "Front End",
-  })[type];
+import {
+  ServiceTypeMap,
+  MaterialTypeMap,
+  type ServiceType,
+  type MaterialType,
+} from "../types/constants";
 
-export const formatMaterialType = (
-  type: "waste" | "recycling" | "concrete" | "dirt" | "mixed",
-) =>
-  ({
-    waste: "Waste",
-    recycling: "Recycling",
-    concrete: "Concrete",
-    dirt: "Dirt",
-    mixed: "Mixed",
-  })[type];
+export const formatServiceType = (type: ServiceType) => ServiceTypeMap[type];
+
+export const formatMaterialType = (type: MaterialType) => MaterialTypeMap[type];
 
 export const formatCurrency = (amount: number | undefined | null) => {
   if (amount === undefined || amount === null) return "-";

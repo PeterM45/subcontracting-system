@@ -27,7 +27,7 @@ import { useState } from "react";
 import dynamic from "next/dynamic";
 import type { ComponentType } from "react";
 import type { GeocoderProps } from "@mapbox/search-js-react/dist/components/Geocoder";
-import type { GeocoderResult } from "~/lib/types";
+import type { GeocoderResult } from "~/types/index";
 
 const Geocoder = dynamic(
   () =>

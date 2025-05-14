@@ -1,38 +1,9 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "../trpc";
-import {
-  ServiceType,
-  MaterialType,
-  type AdditionalCostType,
-  type RateStructure,
-} from "@/lib/types";
 import { serviceRequests, customers } from "~/server/db/schema";
 import { eq } from "drizzle-orm";
-
-// Define schemas for the rate structure
-const additionalCostSchema: z.ZodType<AdditionalCostType> = z.object({
-  name: z.string(),
-  amount: z.number(),
-  isPercentage: z.boolean(),
-  description: z.string().optional(),
-});
-
-const rateStructureSchema: z.ZodType<RateStructure> = z
-  .object({
-    flatRate: z.number().optional(),
-    baseRate: z.number().optional(),
-    dumpFee: z.number().optional(),
-    rentalRate: z.number().optional(),
-    additionalCosts: z.array(additionalCostSchema),
-  })
-  .refine(
-    (data) => {
-      return (data.flatRate !== undefined) !== (data.baseRate !== undefined);
-    },
-    {
-      message: "Must provide either flatRate or baseRate, but not both",
-    },
-  );
+import { rateStructureSchema } from "~/types/index"; // Import the centralized schema
+import { ServiceTypeValues, MaterialTypeValues } from "~/types/constants"; // Import enum values
 
 export const serviceRequestRouter = createTRPCRouter({
   create: publicProcedure
@@ -49,13 +20,13 @@ export const serviceRequestRouter = createTRPCRouter({
           latitude: z.string(),
           longitude: z.string(),
           binSize: z.number(),
-          serviceType: z.enum(ServiceType),
-          materialType: z.enum(MaterialType),
+          serviceType: z.enum(ServiceTypeValues), // Use imported values
+          materialType: z.enum(MaterialTypeValues), // Use imported values
           subcontractorId: z.number(),
           rateId: z.number(),
           scheduledStart: z.string(), // ISO string
           scheduledRemoval: z.string().optional(), // ISO string
-          appliedRateStructure: rateStructureSchema,
+          appliedRateStructure: rateStructureSchema, // Use imported schema
           specialInstructions: z.string().optional(),
         }),
       }),

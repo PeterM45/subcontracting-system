@@ -3,13 +3,14 @@ import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
 import { BackButton } from "@/components/ui/back-button";
 import { Button } from "@/components/ui/button";
-import { SubcontractorInfo } from "~/app/_components/subcontractors/details/subcontractor-info";
-import { RatesTable } from "~/app/_components/subcontractors/details/individual-rates-table";
+import { SubcontractorInfo } from "~/app/subcontractors/_components/details/subcontractor-info";
+import { RatesTable } from "~/app/subcontractors/_components/details/individual-rates-table";
 import { api } from "~/trpc/react";
 import { toast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
-import type { Subcontractor, Rate, UpdateSubcontractorForm } from "~/lib/types";
+import type { Subcontractor, Rate } from "~/types";
+import type { UpdateSubcontractorForm } from "~/types/forms";
 
 export function PageContent({
   subcontractor,
@@ -79,7 +80,7 @@ export function PageContent({
   const Map = useMemo(
     () =>
       dynamic(
-        () => import("~/app/_components/subcontractors/details/location-map"),
+        () => import("~/app/subcontractors/_components/details/location-map"),
         {
           loading: () => <p>A map is loading</p>,
           ssr: false,

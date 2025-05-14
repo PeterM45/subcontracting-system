@@ -2,7 +2,7 @@ import { z } from "zod";
 import { eq, or, gt, sql } from "drizzle-orm";
 import { createTRPCRouter, publicProcedure } from "../trpc";
 import { subcontractors, rates } from "~/server/db/schema";
-import { ServiceType, MaterialType } from "~/lib/types";
+import { ServiceTypeValues, MaterialTypeValues } from "~/types/constants";
 
 export const subcontractorRouter = createTRPCRouter({
   getAll: publicProcedure.query(async ({ ctx }) => {
@@ -77,8 +77,8 @@ export const subcontractorRouter = createTRPCRouter({
         latitude: z.number(),
         longitude: z.number(),
         binSize: z.number(),
-        serviceType: z.enum(ServiceType),
-        materialType: z.enum(MaterialType),
+        serviceType: z.enum(ServiceTypeValues),
+        materialType: z.enum(MaterialTypeValues),
       }),
     )
     .query(async ({ ctx }) => {

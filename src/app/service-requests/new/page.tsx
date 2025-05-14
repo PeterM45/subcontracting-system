@@ -1,4 +1,4 @@
-import { NewServiceRequestForm } from "~/app/_components/service-requests/new-service-request-form";
+import { NewServiceRequestForm } from "~/app/service-requests/_components/new-service-request-form";
 import { BackButton } from "@/components/ui/back-button";
 
 export default function NewServiceRequestPage() {

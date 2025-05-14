@@ -1,6 +1,6 @@
 import { Suspense } from "react";
-import { CustomerList } from "~/app/_components/customers/customer-list";
-import { CreateCustomerDialog } from "~/app/_components/customers/create-customer-dialog";
+import { CustomerList } from "~/app/customers/_components/customer-list";
+import { CreateCustomerDialog } from "~/app/customers/_components/create-customer-dialog";
 import { Skeleton } from "~/components/ui/skeleton";
 
 function CustomerListSkeleton() {

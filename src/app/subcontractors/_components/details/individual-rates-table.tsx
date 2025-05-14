@@ -9,15 +9,12 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { api } from "~/trpc/react";
-import { AddRateDialog } from "~/app/_components/subcontractors/details/add-rate-dialog";
-import { EditRateDialog } from "~/app/_components/subcontractors/details/edit-rate-dialog";
-import {
-  formatServiceType,
-  formatMaterialType,
-  formatCurrency,
-} from "~/lib/formatting";
+import { AddRateDialog } from "~/app/subcontractors/_components/details/add-rate-dialog";
+import { EditRateDialog } from "~/app/subcontractors/_components/details/edit-rate-dialog";
+import { formatCurrency } from "~/lib/formatting";
 import { Trash2, Plus } from "lucide-react";
-import type { Rate, Subcontractor } from "~/lib/types";
+import type { Rate, Subcontractor } from "~/types/index";
+import { ServiceTypeMap, MaterialTypeMap } from "~/types/constants";
 import {
   Popover,
   PopoverContent,
@@ -69,8 +66,8 @@ export function RatesTable({
           <TableBody>
             {rates.map((rate) => (
               <TableRow key={rate.id}>
-                <TableCell>{formatServiceType(rate.serviceType)}</TableCell>
-                <TableCell>{formatMaterialType(rate.materialType)}</TableCell>
+                <TableCell>{ServiceTypeMap[rate.serviceType]}</TableCell>
+                <TableCell>{MaterialTypeMap[rate.materialType]}</TableCell>
                 <TableCell>{rate.binSize}</TableCell>
                 <TableCell className="text-right">
                   {rate.rateStructure.flatRate !== undefined ? (

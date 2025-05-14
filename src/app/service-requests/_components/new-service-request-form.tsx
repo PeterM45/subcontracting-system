@@ -11,10 +11,10 @@ import { CustomerFormSection } from "./customer-form-section";
 import { ServiceFormSection } from "./service-form-section";
 import { SchedulingSection } from "./scheduling-section";
 import { RateAdjustmentSection } from "./rate-adjustment-section";
-import { ServiceType, MaterialType } from "~/lib/types";
+import { ServiceTypeValues, MaterialTypeValues } from "~/types/constants";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import type { GeocoderResult } from "~/lib/types";
+import type { GeocoderResult } from "~/types";
 
 const additionalCostSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -35,8 +35,8 @@ const formSchema = z
     latitude: z.number(),
     longitude: z.number(),
     binSize: z.number().min(1, "Required"),
-    serviceType: z.enum(ServiceType),
-    materialType: z.enum(MaterialType),
+    serviceType: z.enum(ServiceTypeValues),
+    materialType: z.enum(MaterialTypeValues),
     subcontractorId: z.number({
       required_error: "Please select a subcontractor",
     }),

@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { ServiceType, MaterialType } from "~/lib/types";
+import { ServiceTypeValues, MaterialTypeValues } from "~/types/constants";
 import { NumberInput } from "~/components/ui/number-input";
 import { Badge } from "~/components/ui/badge";
 import { Loader2 } from "lucide-react";
@@ -25,7 +25,7 @@ import type { ComponentType } from "react";
 import type { GeocoderProps } from "@mapbox/search-js-react/dist/components/Geocoder";
 import type { Control } from "react-hook-form";
 import type { FormValues } from "./new-service-request-form";
-import type { GeocoderResult, Rate } from "~/lib/types";
+import type { GeocoderResult, Rate } from "~/types";
 import { useWatch, type UseFormReturn } from "react-hook-form";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
@@ -192,7 +192,7 @@ export function ServiceFormSection({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {ServiceType.map((type) => (
+                    {ServiceTypeValues.map((type) => (
                       <SelectItem key={type} value={type}>
                         {type.charAt(0).toUpperCase() + type.slice(1)}
                       </SelectItem>
@@ -220,7 +220,7 @@ export function ServiceFormSection({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {MaterialType.map((type) => (
+                    {MaterialTypeValues.map((type) => (
                       <SelectItem key={type} value={type}>
                         {type.charAt(0).toUpperCase() + type.slice(1)}
                       </SelectItem>

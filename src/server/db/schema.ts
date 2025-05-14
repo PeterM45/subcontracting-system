@@ -9,7 +9,10 @@ import {
   jsonb,
 } from "drizzle-orm/pg-core";
 
-import { ServiceType, MaterialType, type RateStructure } from "@/lib/types";
+// Import the actual enum values for use in table definitions
+import { ServiceTypeValues, MaterialTypeValues } from "@/types/constants";
+// Import the types for type checking if needed elsewhere, though $type is used for jsonb
+import { type RateStructure } from "@/types/index";
 
 export const subcontractors = pgTable("subcontractor", {
   id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
@@ -38,10 +41,10 @@ export const rates = pgTable("rate", {
   // Service Type Details
   binSize: integer("bin_size").notNull(),
   serviceType: varchar("service_type", {
-    enum: ServiceType,
+    enum: ServiceTypeValues, // Use the imported array of values
   }).notNull(),
   materialType: varchar("material_type", {
-    enum: MaterialType,
+    enum: MaterialTypeValues, // Use the imported array of values
   }).notNull(),
 
   // New rate structure using JSON
@@ -75,8 +78,10 @@ export const serviceRequests = pgTable("service_request", {
 
   // Service Info
   binSize: integer("bin_size").notNull(),
-  serviceType: varchar("service_type", { enum: ServiceType }).notNull(),
-  materialType: varchar("material_type", { enum: MaterialType }).notNull(),
+  serviceType: varchar("service_type", { enum: ServiceTypeValues }).notNull(), // Use the imported array of values
+  materialType: varchar("material_type", {
+    enum: MaterialTypeValues,
+  }).notNull(), // Use the imported array of values
 
   // Subcontractor and Rate Reference
   subcontractorId: integer("subcontractor_id")

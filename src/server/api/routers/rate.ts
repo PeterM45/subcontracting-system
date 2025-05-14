@@ -4,32 +4,8 @@ import { eq } from "drizzle-orm";
 import { rates } from "~/server/db/schema";
 import { validateRateStructure } from "@/lib/rate-utils";
 import { TRPCError } from "@trpc/server";
-
-// Define Zod schemas for the rate structure
-const additionalCostSchema = z.object({
-  name: z.string(),
-  amount: z.number(),
-  isPercentage: z.boolean(),
-  description: z.string().optional(),
-});
-
-const rateStructureSchema = z
-  .object({
-    flatRate: z.number().optional(),
-    baseRate: z.number().optional(),
-    dumpFee: z.number().optional(),
-    rentalRate: z.number().optional(),
-    additionalCosts: z.array(additionalCostSchema),
-  })
-  .refine(
-    (data) => {
-      // Ensure either flatRate or baseRate is present, but not both
-      return (data.flatRate === undefined) !== (data.baseRate === undefined);
-    },
-    {
-      message: "Must provide either flatRate or baseRate, but not both",
-    },
-  );
+import { rateStructureSchema } from "~/types/index"; // Import the centralized schema
+import { ServiceTypeValues, MaterialTypeValues } from "~/types/constants"; // Import enum values
 
 export const rateRouter = createTRPCRouter({
   getAll: publicProcedure.query(async ({ ctx }) => {
@@ -49,15 +25,9 @@ export const rateRouter = createTRPCRouter({
       z.object({
         subcontractorId: z.number(),
         binSize: z.number(),
-        serviceType: z.enum(["rolloff", "frontend"]),
-        materialType: z.enum([
-          "waste",
-          "recycling",
-          "concrete",
-          "dirt",
-          "mixed",
-        ]),
-        rateStructure: rateStructureSchema,
+        serviceType: z.enum(ServiceTypeValues), // Use imported values
+        materialType: z.enum(MaterialTypeValues), // Use imported values
+        rateStructure: rateStructureSchema, // Use imported schema
         effectiveDate: z.date(),
         expiryDate: z.date().optional(),
         notes: z.string().optional(),
@@ -94,15 +64,9 @@ export const rateRouter = createTRPCRouter({
       z.object({
         id: z.number(),
         binSize: z.number(),
-        serviceType: z.enum(["rolloff", "frontend"]),
-        materialType: z.enum([
-          "waste",
-          "recycling",
-          "concrete",
-          "dirt",
-          "mixed",
-        ]),
-        rateStructure: rateStructureSchema,
+        serviceType: z.enum(ServiceTypeValues), // Use imported values
+        materialType: z.enum(MaterialTypeValues), // Use imported values
+        rateStructure: rateStructureSchema, // Use imported schema
         effectiveDate: z.date(),
         expiryDate: z.date().optional(),
         notes: z.string().optional(),

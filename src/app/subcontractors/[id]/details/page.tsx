@@ -3,9 +3,11 @@ import { api } from "~/trpc/server";
 import { PageContent } from "~/app/subcontractors/[id]/page-content";
 
 export async function generateMetadata({ params }: { params: { id: string } }) {
-  const { id } = await Promise.resolve(params);
+  const { id } = params; // Removed Promise.resolve
   const numId = Number(id);
-  if (isNaN(numId)) return { title: "Invalid Subcontractor" };
+  if (isNaN(numId)) {
+    notFound();
+  }
 
   const subcontractor = await api.subcontractor.getById({ id: numId });
   return { title: subcontractor?.name ?? "Subcontractor Details" };

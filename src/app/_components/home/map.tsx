@@ -9,7 +9,7 @@ import { useState } from "react";
 import dynamic from "next/dynamic";
 import type { ComponentType } from "react";
 import type { GeocoderProps } from "@mapbox/search-js-react/dist/components/Geocoder";
-import type { Subcontractor } from "~/lib/types";
+import type { Subcontractor } from "~/types/index";
 import Link from "next/link";
 
 const Geocoder = dynamic(

@@ -1,6 +1,6 @@
 import { Suspense } from "react";
-import { CreateSubcontractorDialog } from "~/app/_components/subcontractors/list/create-subcontractor-dialog";
-import { SubcontractorGrid } from "~/app/_components/subcontractors/list/subcontractor-grid";
+import { CreateSubcontractorDialog } from "~/app/subcontractors/_components/list/create-subcontractor-dialog";
+import { SubcontractorGrid } from "~/app/subcontractors/_components/list/subcontractor-grid";
 import { Skeleton } from "~/components/ui/skeleton";
 
 function SubcontractorGridSkeleton() {

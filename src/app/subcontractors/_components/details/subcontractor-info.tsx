@@ -13,12 +13,11 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import type { Subcontractor, GeocoderResult } from "~/types";
 import {
   updateSubcontractorSchema,
   type UpdateSubcontractorForm,
-  type Subcontractor,
-  type GeocoderResult,
-} from "~/lib/types";
+} from "~/types/forms";
 import type { ComponentType } from "react";
 import type { GeocoderProps } from "@mapbox/search-js-react/dist/components/Geocoder";
 
