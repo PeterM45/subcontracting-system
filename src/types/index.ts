@@ -15,7 +15,7 @@ export type AdditionalCostType = z.infer<typeof additionalCostSchema>;
 export const rateStructureSchema = z
   .object({
     flatRate: z.number().positive("Flat rate must be positive").optional(),
-    baseRate: z.number().positive("Base rate must be positive").optional(),
+    liftRate: z.number().positive("Lift rate must be positive").optional(),
     dumpFee: z.number().nonnegative("Dump fee must be non-negative").optional(),
     rentalRate: z
       .number()
@@ -25,26 +25,26 @@ export const rateStructureSchema = z
   })
   .superRefine((data, ctx) => {
     const hasFlatRate = data.flatRate !== undefined && data.flatRate !== null;
-    const hasBaseRate = data.baseRate !== undefined && data.baseRate !== null;
+    const hasLiftRate = data.liftRate !== undefined && data.liftRate !== null;
 
-    if (hasFlatRate && hasBaseRate) {
+    if (hasFlatRate && hasLiftRate) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Cannot define both flatRate and baseRate. Choose one.",
+        message: "Cannot define both flatRate and liftRate. Choose one.",
         path: ["flatRate"],
       });
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Cannot define both flatRate and baseRate. Choose one.",
-        path: ["baseRate"],
+        message: "Cannot define both flatRate and liftRate. Choose one.",
+        path: ["liftRate"],
       });
     }
 
-    if (!hasFlatRate && !hasBaseRate) {
+    if (!hasFlatRate && !hasLiftRate) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Either flatRate or baseRate must be defined.",
-        path: ["baseRate"],
+        message: "Either flatRate or liftRate must be defined.",
+        path: ["liftRate"],
       });
     }
 

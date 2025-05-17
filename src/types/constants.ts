@@ -1,10 +1,10 @@
-export const ServiceTypeValues = ["rolloff", "frontend"] as const;
+export const ServiceTypeValues = ["rolloff"] as const;
 export const MaterialTypeValues = [
   "waste",
   "recycling",
   "concrete",
   "dirt",
-  "mixed",
+  "mixed_waste",
 ] as const;
 
 export type ServiceType = (typeof ServiceTypeValues)[number];
@@ -12,7 +12,6 @@ export type MaterialType = (typeof MaterialTypeValues)[number];
 
 export const ServiceTypeMap: Record<ServiceType, string> = {
   rolloff: "Roll Off",
-  frontend: "Front End",
 };
 
 export const MaterialTypeMap: Record<MaterialType, string> = {
@@ -20,5 +19,5 @@ export const MaterialTypeMap: Record<MaterialType, string> = {
   recycling: "Recycling",
   concrete: "Concrete",
   dirt: "Dirt",
-  mixed: "Mixed",
+  mixed_waste: "Mixed Waste",
 };

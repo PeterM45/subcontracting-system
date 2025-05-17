@@ -33,7 +33,7 @@ export function RateAdjustmentSection({ control }: RateAdjustmentSectionProps) {
   const rateType = useWatch({
     control,
     name: "rateType",
-    defaultValue: "baseAndDump",
+    defaultValue: "liftAndDump",
   });
 
   return (
@@ -58,8 +58,8 @@ export function RateAdjustmentSection({ control }: RateAdjustmentSectionProps) {
                     <Label htmlFor="flat">Flat Rate</Label>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="baseAndDump" id="baseAndDump" />
-                    <Label htmlFor="baseAndDump">Base Rate + Dump Fee</Label>
+                    <RadioGroupItem value="liftAndDump" id="liftAndDump" />
+                    <Label htmlFor="liftAndDump">Lift Rate + Dump Fee</Label>
                   </div>
                 </RadioGroup>
               </FormControl>
@@ -95,10 +95,10 @@ export function RateAdjustmentSection({ control }: RateAdjustmentSectionProps) {
             <>
               <FormField
                 control={control}
-                name="appliedBaseRate"
+                name="appliedLiftRate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Base Rate *</FormLabel>
+                    <FormLabel>Lift Rate *</FormLabel>
                     <FormControl>
                       <CurrencyInput
                         placeholder="0.00"
@@ -107,7 +107,7 @@ export function RateAdjustmentSection({ control }: RateAdjustmentSectionProps) {
                       />
                     </FormControl>
                     <FormDescription>
-                      Base rate for the service request
+                      Lift rate for the service request
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

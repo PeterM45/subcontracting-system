@@ -13,6 +13,7 @@ import { format } from "date-fns";
 import { formatCurrency } from "~/lib/formatting";
 import type { ServiceRequestData } from "~/types/index";
 import { calculateTotalCost } from "~/lib/rate-utils";
+import { ServiceTypeMap } from "~/types/constants";
 
 const styles = StyleSheet.create({
   page: {
@@ -202,9 +203,9 @@ const PDFDocument = ({
                 <Text style={styles.value}>{serviceRequest.binSize} yards</Text>
               </View>
               <View style={styles.row}>
-                <Text style={styles.label}>Base Rate:</Text>
+                <Text style={styles.label}>Lift Rate:</Text>
                 <Text style={styles.value}>
-                  {formatCurrency(serviceRequest.appliedRateStructure.baseRate)}
+                  {formatCurrency(serviceRequest.appliedRateStructure.liftRate)}
                 </Text>
               </View>
               {serviceRequest.appliedRateStructure.dumpFee && (
@@ -255,9 +256,7 @@ const PDFDocument = ({
           <View style={styles.row}>
             <Text style={styles.label}>Service Type:</Text>
             <Text style={styles.value}>
-              {serviceRequest.serviceType === "frontend"
-                ? "Front End"
-                : "Roll Off"}
+              {ServiceTypeMap[serviceRequest.serviceType]}
             </Text>
           </View>
 
@@ -288,7 +287,7 @@ const PDFDocument = ({
           <View style={{ marginTop: 20 }}>
             <Text style={styles.label}>Special Instructions:</Text>
             <View style={{ borderBottom: 1, marginTop: 5 }}>
-              <Text>{serviceRequest.specialInstructions || ""}</Text>
+              <Text>{serviceRequest.specialInstructions ?? ""}</Text>
             </View>
           </View>
 

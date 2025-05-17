@@ -84,17 +84,17 @@ export function ServiceFormSection({
     // Apply the rate structure
     form.setValue(
       "rateType",
-      rate.rateStructure.flatRate !== undefined ? "flat" : "baseAndDump",
+      rate.rateStructure.flatRate !== undefined ? "flat" : "liftAndDump",
     );
 
     // Set the rate structure based on type
     if (rate.rateStructure.flatRate !== undefined) {
       form.setValue("appliedFlatRate", rate.rateStructure.flatRate);
-      form.setValue("appliedBaseRate", undefined);
+      form.setValue("appliedLiftRate", undefined);
       form.setValue("appliedDumpFee", undefined);
     } else {
       form.setValue("appliedFlatRate", undefined);
-      form.setValue("appliedBaseRate", rate.rateStructure.baseRate);
+      form.setValue("appliedLiftRate", rate.rateStructure.liftRate);
       form.setValue("appliedDumpFee", rate.rateStructure.dumpFee ?? undefined);
     }
 
@@ -323,7 +323,7 @@ export function ServiceFormSection({
                       >
                         {rate.rateStructure.flatRate !== undefined
                           ? `$${rate.rateStructure.flatRate.toFixed(2)} Flat`
-                          : `$${rate.rateStructure.baseRate!.toFixed(2)}`}
+                          : `$${rate.rateStructure.liftRate!.toFixed(2)}`}
                       </Badge>
                     </div>
                     {(rate.rateStructure.dumpFee ??

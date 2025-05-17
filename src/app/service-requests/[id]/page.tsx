@@ -116,8 +116,8 @@ export default function ServiceRequestPage({
             ) : (
               <>
                 <p>
-                  <span className="font-medium">Base Rate:</span>{" "}
-                  {formatCurrency(request.appliedRateStructure.baseRate)}
+                  <span className="font-medium">Lift Rate:</span>{" "}
+                  {formatCurrency(request.appliedRateStructure.liftRate)}
                 </p>
                 {request.appliedRateStructure.dumpFee && (
                   <p>

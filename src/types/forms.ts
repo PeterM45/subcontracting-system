@@ -24,7 +24,7 @@ export const rateFormSchema = z
       message: "Rate type is required",
     }),
     flatRate: z.coerce.number().positive().optional(),
-    baseRate: z.coerce.number().positive().optional(),
+    liftRate: z.coerce.number().positive().optional(),
     dumpFee: z.coerce.number().nonnegative().optional(), // Can be 0
 
     rentalRate: z.coerce
@@ -69,21 +69,21 @@ export const rateFormSchema = z
           path: ["flatRate"],
         });
       }
-      // Ensure baseRate and dumpFee are not set if flatRate is chosen
-      if (data.baseRate !== undefined || data.dumpFee !== undefined) {
+      // Ensure liftRate and dumpFee are not set if flatRate is chosen
+      if (data.liftRate !== undefined || data.dumpFee !== undefined) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message:
-            "Base rate and dump fee should not be set when rate type is 'flat'. Clear these fields or change rate type.",
+            "Lift rate and dump fee should not be set when rate type is 'flat'. Clear these fields or change rate type.",
           path: ["rateType"], // General path as it concerns the choice
         });
       }
     } else if (data.rateType === "base_dump") {
-      if (data.baseRate === undefined || data.baseRate === null) {
+      if (data.liftRate === undefined || data.liftRate === null) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Base rate is required when rate type is 'base_dump'",
-          path: ["baseRate"],
+          message: "Lift rate is required when rate type is 'base_dump'",
+          path: ["liftRate"],
         });
       }
       // Dump fee can be optional (e.g. 0) with base_dump

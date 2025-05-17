@@ -23,7 +23,7 @@ export function RatesTable({ rates, onRateClick }: RatesTableProps) {
           <TableHead>Subcontractor</TableHead>
           <TableHead>Service Type</TableHead>
           <TableHead>Bin Size</TableHead>
-          <TableHead className="text-right">Base Rate</TableHead>
+          <TableHead className="text-right">Lift Rate</TableHead>
           <TableHead className="text-right">Effective Date</TableHead>
         </TableRow>
       </TableHeader>
@@ -37,7 +37,7 @@ export function RatesTable({ rates, onRateClick }: RatesTableProps) {
             <TableCell>{rate.subcontractorId}</TableCell>
             <TableCell>{rate.serviceType}</TableCell>
             <TableCell>{rate.binSize}</TableCell>
-            <TableCell className="text-right">${rate.baseRate}</TableCell>
+            <TableCell className="text-right">${rate.liftRate}</TableCell>
             <TableCell className="text-right">
               {new Date(rate.effectiveDate).toLocaleDateString()}
             </TableCell>

@@ -91,13 +91,13 @@ export default function ServiceRequestsPage() {
                       {request.appliedRateStructure.flatRate !== undefined
                         ? `${formatCurrency(request.appliedRateStructure.flatRate)} Flat`
                         : formatCurrency(
-                            request.appliedRateStructure.baseRate!,
+                            request.appliedRateStructure.liftRate!,
                           )}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       {request.appliedRateStructure.flatRate !== undefined
                         ? "Flat Rate"
-                        : "Base Rate"}
+                        : "Lift Rate"}
                     </p>
                     {request.appliedRateStructure.additionalCosts.length >
                       0 && (

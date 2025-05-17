@@ -54,9 +54,9 @@ const formSchema = z
     binSize: z.number().min(1, "Bin size is required"),
     serviceType: z.enum(ServiceTypeValues),
     materialType: z.enum(MaterialTypeValues),
-    rateType: z.enum(["flat", "baseAndDump"]),
+    rateType: z.enum(["flat", "liftAndDump"]),
     flatRate: z.number().optional(),
-    baseRate: z.number().optional(),
+    liftRate: z.number().optional(),
     dumpFee: z.number().optional(),
     rentalRate: z.number().optional(),
     additionalCosts: z.array(additionalCostSchema),
@@ -69,7 +69,7 @@ const formSchema = z
       if (data.rateType === "flat") {
         return data.flatRate !== undefined;
       } else {
-        return data.baseRate !== undefined;
+        return data.liftRate !== undefined;
       }
     },
     {
@@ -90,9 +90,9 @@ export function EditRateDialog({ rate }: { rate: Rate }) {
       binSize: rate.binSize,
       serviceType: rate.serviceType,
       materialType: rate.materialType,
-      rateType: rateStructure.flatRate !== undefined ? "flat" : "baseAndDump",
+      rateType: rateStructure.flatRate !== undefined ? "flat" : "liftAndDump",
       flatRate: rateStructure.flatRate,
-      baseRate: rateStructure.baseRate,
+      liftRate: rateStructure.liftRate,
       dumpFee: rateStructure.dumpFee,
       rentalRate: rateStructure.rentalRate,
       additionalCosts: rateStructure.additionalCosts,
@@ -139,7 +139,7 @@ export function EditRateDialog({ rate }: { rate: Rate }) {
       ...(data.rateType === "flat"
         ? { flatRate: data.flatRate }
         : {
-            baseRate: data.baseRate,
+            liftRate: data.liftRate,
             dumpFee: data.dumpFee,
           }),
       rentalRate: data.rentalRate,
@@ -266,9 +266,9 @@ export function EditRateDialog({ rate }: { rate: Rate }) {
                         <Label htmlFor="flat">Flat Rate</Label>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="baseAndDump" id="baseAndDump" />
-                        <Label htmlFor="baseAndDump">
-                          Base Rate + Dump Fee
+                        <RadioGroupItem value="liftAndDump" id="liftAndDump" />
+                        <Label htmlFor="liftAndDump">
+                          Lift Rate + Dump Fee
                         </Label>
                       </div>
                     </RadioGroup>
@@ -302,10 +302,10 @@ export function EditRateDialog({ rate }: { rate: Rate }) {
               <div className="space-y-4">
                 <FormField
                   control={form.control}
-                  name="baseRate"
+                  name="liftRate"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Base Rate</FormLabel>
+                      <FormLabel>Lift Rate</FormLabel>
                       <FormControl>
                         <Input
                           type="number"

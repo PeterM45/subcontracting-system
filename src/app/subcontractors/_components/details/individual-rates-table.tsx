@@ -88,12 +88,12 @@ export function RatesTable({
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <span className="cursor-help">
-                            {formatCurrency(rate.rateStructure.baseRate)} +{" "}
+                            {formatCurrency(rate.rateStructure.liftRate)} +{" "}
                             {formatCurrency(rate.rateStructure.dumpFee)}
                           </span>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>Base Rate + Dump Fee</p>
+                          <p>Lift Rate + Dump Fee</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>

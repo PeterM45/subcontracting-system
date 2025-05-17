@@ -51,9 +51,9 @@ const formSchema = z
     scheduledRemoval: z.date().optional(),
 
     // Applied Rates
-    rateType: z.enum(["flat", "baseAndDump"]),
+    rateType: z.enum(["flat", "liftAndDump"]),
     appliedFlatRate: z.number().optional(),
-    appliedBaseRate: z.number().optional(),
+    appliedLiftRate: z.number().optional(),
     appliedDumpFee: z.number().optional(),
     appliedRentalRate: z.number().optional(),
     appliedAdditionalCosts: z.array(additionalCostSchema),
@@ -66,7 +66,7 @@ const formSchema = z
       if (data.rateType === "flat") {
         return data.appliedFlatRate !== undefined;
       } else {
-        return data.appliedBaseRate !== undefined;
+        return data.appliedLiftRate !== undefined;
       }
     },
     {
@@ -98,9 +98,9 @@ export function NewServiceRequestForm() {
       rateId: undefined,
       scheduledStart: undefined,
       scheduledRemoval: undefined,
-      rateType: "baseAndDump",
+      rateType: "liftAndDump",
       appliedFlatRate: undefined,
-      appliedBaseRate: 0,
+      appliedLiftRate: 0,
       appliedDumpFee: 0,
       appliedRentalRate: undefined,
       appliedAdditionalCosts: [],
@@ -140,7 +140,7 @@ export function NewServiceRequestForm() {
       ...(data.rateType === "flat"
         ? { flatRate: data.appliedFlatRate }
         : {
-            baseRate: data.appliedBaseRate,
+            liftRate: data.appliedLiftRate,
             dumpFee: data.appliedDumpFee,
           }),
       rentalRate: data.appliedRentalRate,

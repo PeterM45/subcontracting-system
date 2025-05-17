@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useForm, useFieldArray, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -6,15 +8,17 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
+  DialogClose,
 } from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
@@ -24,56 +28,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { useFieldArray, useForm } from "react-hook-form";
+import { Textarea } from "@/components/ui/textarea";
 import { api } from "~/trpc/react";
-import type { Subcontractor } from "~/types";
-import { ServiceTypeValues, MaterialTypeValues } from "~/types/constants";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
+import type { Subcontractor } from "@/types/index";
+import {
+  ServiceTypeValues,
+  MaterialTypeValues,
+  ServiceTypeMap,
+  MaterialTypeMap,
+} from "@/types/constants";
+import { type RateFormData, rateFormSchema } from "@/types/forms";
+import { CalendarIcon, PlusCircle, Trash2 } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { Calendar } from "@/components/ui/calendar";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Trash2 } from "lucide-react";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-
-// Form validation schema
-const additionalCostSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  amount: z.number().min(0, "Amount must be positive"),
-  isPercentage: z.boolean(),
-  description: z.string().optional(),
-});
-
-const formSchema = z
-  .object({
-    binSize: z.number().min(1, "Bin size is required"),
-    serviceType: z.enum(ServiceTypeValues),
-    materialType: z.enum(MaterialTypeValues),
-    rateType: z.enum(["flat", "baseAndDump"]),
-    flatRate: z.number().optional(),
-    baseRate: z.number().optional(),
-    dumpFee: z.number().optional(),
-    rentalRate: z.number().optional(),
-    additionalCosts: z.array(additionalCostSchema),
-    effectiveDate: z.string().min(1, "Effective date is required"),
-    expiryDate: z.string().optional(),
-    notes: z.string().optional(),
-  })
-  .refine(
-    (data) => {
-      if (data.rateType === "flat") {
-        return data.flatRate !== undefined;
-      } else {
-        return data.baseRate !== undefined;
-      }
-    },
-    {
-      message: "Please provide the required rate information",
-      path: ["rateType"],
-    },
-  );
-
-type FormData = z.infer<typeof formSchema>;
 
 export function AddRateDialog({
   subcontractor,
@@ -81,10 +55,17 @@ export function AddRateDialog({
   subcontractor: Subcontractor;
 }) {
   const [open, setOpen] = useState(false);
-  const form = useForm<FormData>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<RateFormData>({
+    resolver: zodResolver(rateFormSchema),
     defaultValues: {
-      rateType: "baseAndDump",
+      binSize: undefined,
+      serviceType: undefined,
+      materialType: undefined,
+      rateType: "base_dump",
+      flatRate: undefined,
+      liftRate: undefined,
+      dumpFee: undefined,
+      rentalRate: undefined,
       additionalCosts: [],
       effectiveDate: "",
       expiryDate: "",
@@ -98,9 +79,9 @@ export function AddRateDialog({
   });
 
   const utils = api.useUtils();
-  const rateType = form.watch("rateType");
+  const watchedRateType = form.watch("rateType");
 
-  const addRate = api.rate.create.useMutation({
+  const addRateMutation = api.rate.create.useMutation({
     onSuccess: async () => {
       await utils.rate.getBySubcontractor.invalidate({
         subcontractorId: subcontractor.id,
@@ -108,27 +89,41 @@ export function AddRateDialog({
       setOpen(false);
       form.reset();
     },
+    onError: (error) => {
+      console.error("Failed to add rate:", error);
+    },
   });
 
-  const onSubmit = (data: FormData) => {
-    // Construct the rate structure based on form data
-    const rateStructure = {
-      ...(data.rateType === "flat"
-        ? { flatRate: data.flatRate }
-        : {
-            baseRate: data.baseRate,
-            dumpFee: data.dumpFee,
-          }),
+  const onSubmit = (data: RateFormData) => {
+    const rateStructurePayload: {
+      flatRate?: number;
+      liftRate?: number;
+      dumpFee?: number;
+      rentalRate?: number;
+      additionalCosts: typeof data.additionalCosts;
+    } = {
       rentalRate: data.rentalRate,
-      additionalCosts: data.additionalCosts,
+      additionalCosts: data.additionalCosts.map((cost) => ({
+        ...cost,
+        amount: cost.amount,
+      })),
     };
 
-    addRate.mutate({
+    if (data.rateType === "flat") {
+      rateStructurePayload.flatRate = data.flatRate;
+    } else {
+      rateStructurePayload.liftRate = data.liftRate;
+      if (data.dumpFee !== undefined && data.dumpFee !== null) {
+        rateStructurePayload.dumpFee = data.dumpFee;
+      }
+    }
+
+    addRateMutation.mutate({
       subcontractorId: subcontractor.id,
       binSize: data.binSize,
       serviceType: data.serviceType,
       materialType: data.materialType,
-      rateStructure,
+      rateStructure: rateStructurePayload,
       effectiveDate: new Date(data.effectiveDate),
       expiryDate: data.expiryDate ? new Date(data.expiryDate) : undefined,
       notes: data.notes,
@@ -145,31 +140,33 @@ export function AddRateDialog({
           <DialogTitle>Add New Rate</DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {/* Basic Information */}
-            <div className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <FormField
                 control={form.control}
                 name="binSize"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Bin Size</FormLabel>
+                    <FormLabel>Bin Size (Yards)</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
+                        placeholder="e.g., 20"
                         {...field}
-                        value={field.value || ""} // Handle 0 and undefined cases
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          field.onChange(value === "" ? 0 : Number(value));
-                        }}
+                        onChange={(e) =>
+                          field.onChange(
+                            e.target.value === ""
+                              ? undefined
+                              : parseFloat(e.target.value),
+                          )
+                        }
+                        value={field.value ?? ""}
                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
                 name="serviceType"
@@ -186,15 +183,17 @@ export function AddRateDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="rolloff">Roll Off</SelectItem>
-                        <SelectItem value="frontend">Front End</SelectItem>
+                        {ServiceTypeValues.map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {ServiceTypeMap[type]}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
                 name="materialType"
@@ -211,11 +210,11 @@ export function AddRateDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="waste">Waste</SelectItem>
-                        <SelectItem value="recycling">Recycling</SelectItem>
-                        <SelectItem value="concrete">Concrete</SelectItem>
-                        <SelectItem value="dirt">Dirt</SelectItem>
-                        <SelectItem value="mixed">Mixed</SelectItem>
+                        {MaterialTypeValues.map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {MaterialTypeMap[type]}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -224,38 +223,42 @@ export function AddRateDialog({
               />
             </div>
 
-            {/* Rate Type Selection */}
             <FormField
               control={form.control}
               name="rateType"
               render={({ field }) => (
-                <FormItem className="space-y-3">
+                <FormItem>
                   <FormLabel>Rate Type</FormLabel>
-                  <FormControl>
-                    <RadioGroup
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                      className="flex flex-col space-y-1"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="flat" id="flat" />
-                        <Label htmlFor="flat">Flat Rate</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="baseAndDump" id="baseAndDump" />
-                        <Label htmlFor="baseAndDump">
-                          Base Rate + Dump Fee
-                        </Label>
-                      </div>
-                    </RadioGroup>
-                  </FormControl>
+                  <Select
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      if (value === "flat") {
+                        form.setValue("liftRate", undefined);
+                        form.setValue("dumpFee", undefined);
+                        form.clearErrors(["liftRate", "dumpFee"]);
+                      } else if (value === "base_dump") {
+                        form.setValue("flatRate", undefined);
+                        form.clearErrors("flatRate");
+                      }
+                    }}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select rate type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="flat">Flat Rate</SelectItem>
+                      <SelectItem value="base_dump">Base + Dump Fee</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            {/* Rate Fields */}
-            {rateType === "flat" ? (
+            {watchedRateType === "flat" && (
               <FormField
                 control={form.control}
                 name="flatRate"
@@ -265,11 +268,14 @@ export function AddRateDialog({
                     <FormControl>
                       <Input
                         type="number"
+                        placeholder="Enter flat rate"
                         {...field}
-                        value={field.value ?? ""} // Handle 0 and undefined cases
+                        value={field.value ?? ""} // Ensure string for input value if undefined/null
                         onChange={(e) => {
-                          const value = e.target.value;
-                          field.onChange(value === "" ? 0 : Number(value));
+                          const val = e.target.value;
+                          field.onChange(
+                            val === "" ? undefined : parseFloat(val),
+                          );
                         }}
                       />
                     </FormControl>
@@ -277,22 +283,27 @@ export function AddRateDialog({
                   </FormItem>
                 )}
               />
-            ) : (
-              <div className="space-y-4">
+            )}
+
+            {watchedRateType === "base_dump" && (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <FormField
                   control={form.control}
-                  name="baseRate"
+                  name="liftRate"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Base Rate</FormLabel>
+                      <FormLabel>Lift Rate</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
+                          placeholder="Enter lift rate"
                           {...field}
-                          value={field.value ?? ""} // Handle 0 and undefined cases
+                          value={field.value ?? ""}
                           onChange={(e) => {
-                            const value = e.target.value;
-                            field.onChange(value === "" ? 0 : Number(value));
+                            const val = e.target.value;
+                            field.onChange(
+                              val === "" ? undefined : parseFloat(val),
+                            );
                           }}
                         />
                       </FormControl>
@@ -300,21 +311,23 @@ export function AddRateDialog({
                     </FormItem>
                   )}
                 />
-
                 <FormField
                   control={form.control}
                   name="dumpFee"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Dump Fee</FormLabel>
+                      <FormLabel>Dump Fee (Optional)</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
+                          placeholder="Enter dump fee"
                           {...field}
-                          value={field.value ?? ""} // Handle 0 and undefined cases
+                          value={field.value ?? ""}
                           onChange={(e) => {
-                            const value = e.target.value;
-                            field.onChange(value === "" ? 0 : Number(value));
+                            const val = e.target.value;
+                            field.onChange(
+                              val === "" ? undefined : parseFloat(val),
+                            );
                           }}
                         />
                       </FormControl>
@@ -324,22 +337,23 @@ export function AddRateDialog({
                 />
               </div>
             )}
-
-            {/* Rental Rate */}
             <FormField
               control={form.control}
               name="rentalRate"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Rental Rate (Optional)</FormLabel>
+                  <FormLabel>Daily Rental Rate (Optional)</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
+                      placeholder="Enter daily rental rate"
                       {...field}
-                      value={field.value ?? ""} // Handle 0 and undefined cases
+                      value={field.value ?? ""}
                       onChange={(e) => {
-                        const value = e.target.value;
-                        field.onChange(value === "" ? 0 : Number(value));
+                        const val = e.target.value;
+                        field.onChange(
+                          val === "" ? undefined : parseFloat(val),
+                        );
                       }}
                     />
                   </FormControl>
@@ -347,114 +361,172 @@ export function AddRateDialog({
                 </FormItem>
               )}
             />
-
-            {/* Additional Costs */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label>Additional Costs</Label>
+            {/* Additional Costs Section */}
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <h3 className="text-lg font-medium">Additional Costs</h3>
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={() =>
-                    append({ name: "", amount: 0, isPercentage: false })
+                    append({
+                      name: "",
+                      amount: 0, // Stays undefined, Zod coerces to 0
+                      isPercentage: false,
+                      description: "",
+                    })
                   }
                 >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Cost
+                  <PlusCircle className="mr-2 h-4 w-4" /> Add Cost
                 </Button>
               </div>
-
-              {fields.map((field, index) => (
-                <Card key={field.id}>
-                  <CardContent className="pt-6">
-                    <div className="grid gap-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name={`additionalCosts.${index}.name`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Name</FormLabel>
-                              <FormControl>
-                                <Input {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={form.control}
-                          name={`additionalCosts.${index}.amount`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Amount</FormLabel>
-                              <FormControl>
-                                <Input
-                                  type="number"
-                                  step="0.01"
-                                  {...field}
-                                  onChange={(e) =>
-                                    field.onChange(Number(e.target.value))
-                                  }
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <FormField
-                          control={form.control}
-                          name={`additionalCosts.${index}.isPercentage`}
-                          render={({ field }) => (
-                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                              <div className="space-y-0.5">
-                                <FormLabel className="text-base">
-                                  Percentage
-                                </FormLabel>
-                                <FormDescription>
-                                  Is this a percentage of the base amount?
-                                </FormDescription>
-                              </div>
-                              <FormControl>
-                                <Switch
-                                  checked={field.value}
-                                  onCheckedChange={field.onChange}
-                                />
-                              </FormControl>
-                            </FormItem>
-                          )}
-                        />
-
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon"
-                          onClick={() => remove(index)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+              {fields.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  No additional costs defined.
+                </p>
+              )}
+              {fields.map((item, index) => (
+                <div
+                  key={item.id}
+                  className="mt-3 space-y-3 rounded-md border p-4"
+                >
+                  <div className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2">
+                    <FormField
+                      control={form.control}
+                      name={`additionalCosts.${index}.name`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Cost Name</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="e.g., Fuel Surcharge"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name={`additionalCosts.${index}.amount`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Amount</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              placeholder="Enter amount"
+                              {...field}
+                              value={field.value ?? ""}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                field.onChange(
+                                  val === "" ? undefined : parseFloat(val),
+                                );
+                              }}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <FormField
+                    control={form.control}
+                    name={`additionalCosts.${index}.description`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Description (Optional)</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Brief description of the cost"
+                            {...field}
+                            value={field.value ?? ""}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <div className="flex items-center justify-between pt-2">
+                    <FormField
+                      control={form.control}
+                      name={`additionalCosts.${index}.isPercentage`}
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center space-x-2">
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                              id={`additionalCosts.${index}.isPercentage`}
+                            />
+                          </FormControl>
+                          <FormLabel
+                            htmlFor={`additionalCosts.${index}.isPercentage`}
+                            className="!mt-0 cursor-pointer text-sm font-normal"
+                          >
+                            {watchedRateType === "flat"
+                              ? "Percentage of Flat Rate"
+                              : watchedRateType === "base_dump"
+                                ? "Percentage of Lift Rate + Dump Fee"
+                                : "Is Percentage"}
+                          </FormLabel>
+                        </FormItem>
+                      )}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => remove(index)}
+                      className="text-red-500 hover:text-red-600"
+                    >
+                      <Trash2 className="mr-1 h-4 w-4" /> Remove
+                    </Button>
+                  </div>
+                </div>
               ))}
             </div>
 
-            {/* Dates and Notes */}
             <FormField
               control={form.control}
               name="effectiveDate"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="flex flex-col">
                   <FormLabel>Effective Date</FormLabel>
-                  <FormControl>
-                    <Input type="date" {...field} />
-                  </FormControl>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground",
+                          )}
+                        >
+                          {field.value ? (
+                            format(new Date(field.value), "PPP")
+                          ) : (
+                            <span>Pick a date</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={
+                          field.value ? new Date(field.value) : undefined
+                        }
+                        onSelect={(date) =>
+                          field.onChange(date ? format(date, "yyyy-MM-dd") : "")
+                        }
+                      />
+                    </PopoverContent>
+                  </Popover>
                   <FormMessage />
                 </FormItem>
               )}
@@ -464,11 +536,39 @@ export function AddRateDialog({
               control={form.control}
               name="expiryDate"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="flex flex-col">
                   <FormLabel>Expiry Date (Optional)</FormLabel>
-                  <FormControl>
-                    <Input type="date" {...field} />
-                  </FormControl>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground",
+                          )}
+                        >
+                          {field.value ? (
+                            format(new Date(field.value), "PPP")
+                          ) : (
+                            <span>Pick a date</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={
+                          field.value ? new Date(field.value) : undefined
+                        }
+                        onSelect={(date) =>
+                          field.onChange(date ? format(date, "yyyy-MM-dd") : "")
+                        }
+                      />
+                    </PopoverContent>
+                  </Popover>
                   <FormMessage />
                 </FormItem>
               )}
@@ -481,25 +581,27 @@ export function AddRateDialog({
                 <FormItem>
                   <FormLabel>Notes (Optional)</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Textarea
+                      placeholder="Any additional notes for this rate..."
+                      className="resize-none"
+                      {...field}
+                      value={field.value ?? ""}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-
-            <div className="flex justify-end space-x-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setOpen(false)}
-              >
-                Cancel
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" variant="outline">
+                  Cancel
+                </Button>
+              </DialogClose>
+              <Button type="submit" disabled={addRateMutation.isPending}>
+                {addRateMutation.isPending ? "Adding..." : "Add Rate"}
               </Button>
-              <Button type="submit" disabled={addRate.status === "pending"}>
-                {addRate.status === "pending" ? "Adding..." : "Add Rate"}
-              </Button>
-            </div>
+            </DialogFooter>
           </form>
         </Form>
       </DialogContent>

@@ -5,8 +5,8 @@ export const calculateTotalCost = (rateStructure: RateStructure): number => {
 
   if (rateStructure.flatRate !== undefined) {
     baseAmount = rateStructure.flatRate;
-  } else if (rateStructure.baseRate !== undefined) {
-    baseAmount = rateStructure.baseRate + (rateStructure.dumpFee ?? 0);
+  } else if (rateStructure.liftRate !== undefined) {
+    baseAmount = rateStructure.liftRate + (rateStructure.dumpFee ?? 0);
   }
 
   if (rateStructure.rentalRate !== undefined) {
@@ -26,14 +26,14 @@ export const validateRateStructure = (
 ): boolean => {
   if (
     rateStructure.flatRate !== undefined &&
-    rateStructure.baseRate !== undefined
+    rateStructure.liftRate !== undefined
   ) {
     return false;
   }
 
   if (
     rateStructure.flatRate === undefined &&
-    rateStructure.baseRate === undefined
+    rateStructure.liftRate === undefined
   ) {
     return false;
   }
